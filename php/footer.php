@@ -1,5 +1,5 @@
 <?php
 	function foot() {
-		echo "foot";
+		echo "</html>";
 	}
 ?>
