@@ -1,0 +1,19 @@
+* {
+	font-family: 'Droid Sans', sans-serif; 
+}
+html, body, #map-canvas { 
+	height: 100%; 
+	margin: 0; 
+	padding: 0;
+}
+
+h1 {
+	background-color: lightgray;
+	color:#535353;
+	font-size: 2em;
+	width: auto;
+	height: auto;
+}
+p {
+	font-size: 1em;
+}
