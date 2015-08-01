@@ -12,4 +12,5 @@
 			echo "error";
 		}
 	}
+	echo foot(".");
 ?>

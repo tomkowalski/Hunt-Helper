@@ -7,6 +7,6 @@
 		<div id="map-canvas"> </div>
 	</body>
 __HTML;
-	foot();  
+	echo foot(".");  
 
 ?>

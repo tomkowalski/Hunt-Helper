@@ -1,19 +1,57 @@
 * {
-	font-family: 'Droid Sans', sans-serif; 
+	font-family: 'Droid Sans', sans-serif;
+	margin: 0, 0; 
+}
+html {
+ height: 100%;   
+}
+header {
+	position: a
 }
 html, body, #map-canvas { 
-	height: 100%; 
+	height: 96%; 
 	margin: 0; 
 	padding: 0;
+	clear: both;
 }
+
 
 h1 {
 	background-color: lightgray;
 	color:#535353;
 	font-size: 2em;
 	width: auto;
-	height: auto;
 }
 p {
 	font-size: 1em;
+}
+img {
+	width: auto;
+	float: left;
+}
+nav ul {
+	float left;
+	width: auto;
+}
+nav li {
+	float: left;
+	text-align: center;
+	width: 20%;
+	list-style-type: none;
+}
+footer {
+	height: auto;
+	background: darkgray;
+	padding: 0, 0;
+	margin: 0, 0;
+
+}
+footer p, footer img {
+}
+footer p {
+	width: auto;
+	text-align: center;
+}
+footer img {
+	width: auto;
 }
