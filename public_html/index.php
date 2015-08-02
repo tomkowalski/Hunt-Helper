@@ -2,7 +2,8 @@
 	require_once('../php/header.php');
 	require_once('../php/footer.php');
 	require_once('../php/db_login.php');
-	//echo login();
+	
+	login();
 	echo head(".", "Map");
 	echo <<<__HTML
 	<body>
