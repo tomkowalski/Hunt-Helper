@@ -1,5 +1,5 @@
 <?php
-	require_once('../php/header.php'); 
+	require_once('../php/header.php');
 	if($_COOKIE["set"]) {
 		echo "set", head(".", "Login");
 	}

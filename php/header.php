@@ -8,12 +8,8 @@
     				<meta charset="utf-8">
 					<link href='http://fonts.googleapis.com/css?family=Arimo:400,700,700italic,400italic|Droid+Sans:400,700' rel='stylesheet' type='text/css'>
 					<link rel="stylesheet" type="text/css" href="$path/css/main.css">
-					<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&signed_in=true&libraries=places"></script>
 					<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
-					<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=places"></script>
-					<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA0lAOq5lLPLFlJ6mxDOIvJK_5y1WBE28Y"></script>
 					<script type="text/javascript" src="$path/js/init_map.js"></script>
-					<script type="text/javascript" src="$path/js/test.js"></script>
 					<title>Husky Hunt Helper: $page</title>
 				</head>
 __HTML;
