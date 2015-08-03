@@ -1,5 +1,6 @@
 <?php
 	function head($path, $page) {
+
 		$out = <<<__HTML
 			<!DOCTYPE html>
 			<html>
@@ -32,18 +33,11 @@ __HTML;
 	function nav($path, $page) {
 		$out = "";
 		if( $_SESSION["set"]) {
-			require_once('../php/db_login.php');
-			$conn = login();		
+			require_once('db_util.php');
 			$userID = $_SESSION["ID"];
-			$result = $conn->query("SELECT * FROM user WHERE ID='$userID'");
-			$row = $result->fetch_assoc();
-			$groupID = $row['groupKey'];
-			$name = $row['username'];
-			$result = $conn->query("SELECT name FROM userGroup WHERE ID='$groupID'");
-			$row = $result->fetch_assoc();
-			$group = $row['name'];
-			$conn->close();
-			$result->close();
+			$groupID = getOne("SELECT * FROM user WHERE ID='$userID'", 'groupKey');
+			$name = getOne("SELECT * FROM user WHERE ID='$userID'", 'username');
+			$group = getOne("SELECT name FROM userGroup WHERE ID='$groupID'", 'name');
 			$out = <<<__HTML
 			<nav> 
 					<img src="$path/assets/logo(small).png">

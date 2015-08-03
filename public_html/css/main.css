@@ -13,11 +13,25 @@
 		clear: both;
 	}
 	h1 {
-		background-color: #B5B5B5;
+		//background-color: #B5B5B5;
 		color: #535353;
 		font-size: 2em;
 		width: auto;
+		text-align: center;
 	}
+	.form {
+		margin-left: 35%;
+		margin-right: 35%;
+		display: block;
+		width: 100%
+	}
+	form{
+		text-align: left;
+	}
+	input {
+		width: 30%;
+	}
+
 	p {
 		font-size: 1em;
 	}
