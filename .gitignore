@@ -1,3 +1,4 @@
 #Ignore Log folder
 logs/
 secret.php
+db_login.php

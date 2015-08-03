@@ -1,12 +1,13 @@
 <?php
-	if(session_status() == PHP_SESSION_NONE) {
-		session_start();
-	}	
+	session_start();	
 	require_once('../php/header.php');
 	require_once('../php/footer.php');
-	if($_SESSION["set"]) {
+	require_once('../php/db_login.php');
+	$conn = login();
+	if($_SESSION["set"]) {			
 		if(isset($_POST['set'])) {
-			$_SESSION['set']=false;
+			session_unset();
+			session_destroy();
 			include("index.php");
 		}
 		else {
@@ -23,7 +24,17 @@ __HTML;
 	else {
 		if(isset($_POST['uName'])
 		&& isset($_POST['pWord'])) {
-			$_SESSION['set'] = true;
+			$name = $_POST['uName'];
+			$pass = $_POST['pWord'];
+			$result = $conn->query("SELECT ID FROM user 
+				WHERE username='$name' AND pass='$pass'");
+				if($result->num_rows > 0) {
+					$row = $result->fetch_assoc();
+					$_SESSION['ID'] = $row['ID'];
+					$_SESSION['set'] = true;
+				}
+			$conn->close();
+			$result->close();
 			include("index.php");
 		}
 		else {

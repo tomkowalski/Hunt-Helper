@@ -1,8 +1,5 @@
 <?php
 	function head($path, $page) {
-		if(session_status() == PHP_SESSION_NONE) {
-			session_start();
-		}	
 		$out = <<<__HTML
 			<!DOCTYPE html>
 			<html>
@@ -22,7 +19,7 @@ __HTML;
 			$out .= <<<__HTML
 			<script type="text/javascript" src="$path/js/init_map.js"></script>
 __HTML;
-		}
+		}	
 		$out .= "<style>
 				nav li {
 					width: $width%;
@@ -34,21 +31,34 @@ __HTML;
 	}
 	function nav($path, $page) {
 		$out = "";
-		if($_SESSION["set"]) {
+		if( $_SESSION["set"]) {
+			require_once('../php/db_login.php');
+			$conn = login();		
+			$userID = $_SESSION["ID"];
+			$result = $conn->query("SELECT * FROM user WHERE ID='$userID'");
+			$row = $result->fetch_assoc();
+			$groupID = $row['groupKey'];
+			$name = $row['username'];
+			$result = $conn->query("SELECT name FROM userGroup WHERE ID='$groupID'");
+			$row = $result->fetch_assoc();
+			$group = $row['name'];
+			$conn->close();
+			$result->close();
 			$out = <<<__HTML
 			<nav> 
 					<img src="$path/assets/logo(small).png">
 					<ul>
 						<li><a href="$path/index.php"> Map </a></li>
-						<li> Group </li>
+						<li> $group </li>
 						<li> Location </li>
 						<li> My Route </l1>
-						<li><a href="$path/login.php"> My Account </a></li>
+						<li><a href="$path/login.php"> my $name </a></li>
 					</ul>
 				</nav>
 __HTML;
 		}
 		else {
+			//$_SESSION["set"] = false;
 			$out = <<<__HTML
 			<nav> 
 					<img src="$path/assets/logo(small).png">
