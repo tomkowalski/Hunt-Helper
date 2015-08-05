@@ -19,6 +19,13 @@
 				<input type="Submit" value="Log Out">
 			</form>
 			</div>
+			<h1> Change Group </h1>
+			<div class="form">
+			<form method="post" action="group_signup.php">
+				<input type="hidden" name="change" value="true">
+				<input type="Submit" value="Change Group">
+			</form>
+			</div>
 __HTML;
 		echo foot(".");
 		}

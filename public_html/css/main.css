@@ -13,9 +13,14 @@
 		clear: both;
 	}
 	h1 {
-		//background-color: #B5B5B5;
 		color: #535353;
 		font-size: 2em;
+		width: auto;
+		text-align: center;
+	}
+	h2 {
+		color: #535353;
+		font-size: 1.5em;
 		width: auto;
 		text-align: center;
 	}

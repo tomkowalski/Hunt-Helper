@@ -3,7 +3,6 @@
 	require_once('../php/footer.php');
 	require_once('../php/db_util.php');
 	session_start();
-	head(".", "Sign Up");
 	if($_SESSION["set"]) {
 		$body .= "already signed in";
 	}
@@ -14,13 +13,14 @@
 			&& isset($_POST["uName"])
 			//&& isset($_POST["gName"])
 			&& isset($_POST["pass"])
-			&& isset($_POST["passConf"])
+			//&& isset($_POST["passConf"])
 			&& isset($_POST["email"])
-			&& isset($_POST["emailConf"])
+			//&& isset($_POST["emailConf"])
 			/*&& isset($_POST["gPass"])*/) {
 				$rows = prep();
 				if($rows == 1) {
-					$body = '<h1 style=h1{text-align:center}> USER MADE </h1> <h2> Please Login </h2>';
+					include("group_signup.php");
+					$body = group($_POST["uName"]);
 				}
 				else {
 					$_SESSION["error"] = $rows;
@@ -77,7 +77,7 @@ __HTML;
 			$in = $conn->prepare('INSERT INTO user VALUES(?, ?, ?, ?, ?, ?, ?, ?)');
 			$in->bind_param("sssssiii", $f, $l, $u, $p, $e, $g, $id, $sg);
 			$in->execute();
-			$out = $in-> affected_rows;
+			$out = $in->affected_rows;
 			$in->close();
 			$conn->close();
 			if($out == 0) {
