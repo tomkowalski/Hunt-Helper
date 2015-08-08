@@ -3,7 +3,7 @@
 	require_once('../php/footer.php');
 	require_once('../php/db_util.php');
 	session_start();
-	if($_SESSION["set"]) {
+	if(isset($_SESSION["ID"]) {
 		$body .= "already signed in";
 	}
 	else {
@@ -75,7 +75,7 @@ __HTML;
 			//require_once('../php/db_util.php');
 			$conn = login();
 			$in = $conn->prepare('INSERT INTO user VALUES(?, ?, ?, ?, ?, ?, ?, ?)');
-			$in->bind_param("sssssiii", $f, $l, $u, $p, $e, $g, $id, $sg);
+			$in->bind_param("sssssiii", $f, $l, $u, $p, $e, $g, $sg, $id);
 			$in->execute();
 			$out = $in->affected_rows;
 			$in->close();

@@ -8,7 +8,8 @@ if(isset($_POST["type"])) {
 		$body = change();
 	}
 	else{
-		if(isset($_POST["name"])) {
+		if(isset($_POST["name"]) 
+		&& $_POST["name"] != "") {
 			$pass = true;
 			if(isset($_POST["pass"])
 			|| isset($_POST["passconf"])) {
@@ -108,7 +109,7 @@ function change(){
 	$groupID = getOne("SELECT * FROM userGroup WHERE name='$gName' AND pass='$gPass'", "ID");
 	if($groupID != "No Results") {
 		$conn = login();
-		$result = $conn->query("UPDATE user SET groupKey='$groupID' WHERE ID='$uID'");
+		$result = $conn->query("UPDATE user SET group_key='$groupID' WHERE ID='$uID'");
 		if($result) {
 			$out = <<<__HTML
 				<h2> Joined $gName </h2>

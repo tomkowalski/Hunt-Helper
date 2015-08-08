@@ -13,7 +13,7 @@
 					<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
 __HTML;
 		$width = 30;
-		if($_SESSION["set"]) {
+		if(isset($_SESSION["ID"])) {
 			$width = 17;
 		}
 		if($page == "Map")	{
@@ -32,10 +32,10 @@ __HTML;
 	}
 	function nav($path, $page) {
 		$out = "";
-		if( $_SESSION["set"]) {
+		if(isset($_SESSION["ID"])) {
 			require_once('db_util.php');
 			$userID = $_SESSION["ID"];
-			$groupID = getOne("SELECT * FROM user WHERE ID='$userID'", 'groupKey');
+			$groupID = getOne("SELECT * FROM user WHERE ID='$userID'", 'group_key');
 			$name = getOne("SELECT * FROM user WHERE ID='$userID'", 'username');
 			$group = getOne("SELECT name FROM userGroup WHERE ID='$groupID'", 'name');
 			$out = <<<__HTML
@@ -43,7 +43,7 @@ __HTML;
 					<img src="$path/assets/logo(small).png">
 					<ul>
 						<li><a href="$path/index.php"> Map </a></li>
-						<li> $group </li>
+						<li id='group'> $group </li>
 						<li> Location </li>
 						<li> My Route </l1>
 						<li><a href="$path/login.php"> my $name </a></li>

@@ -3,7 +3,7 @@
 	require_once('../php/header.php');
 	require_once('../php/footer.php');
 	require('../php/db_util.php');
-	if($_SESSION["set"]) {			
+	if(isset($_SESSION["ID"])) {			
 		if(isset($_POST['set'])) {
 			session_unset();
 			session_destroy();
