@@ -1,7 +1,11 @@
 <?php
 require_once("../../php/db_util.php");
-
-$id = $_POST['id'];
+if(!isset($_POST['id'])) {
+	$id = -1;
+}
+else {
+	$id = $_POST['id'];	
+}
 $num = $_POST['number'];
 $lat = $_POST['lat'];
 $lng =$_POST['lng'];
@@ -10,32 +14,51 @@ $add = $_POST['address'];
 $group = $_POST['group'];
 $subgroup = $_POST['subgroup'];
 $visited = $_POST['visited'];
+$del = $_POST['del'];
 $groupID = getOne("SELECT ID FROM userGroup WHERE name='$group'", "ID");
 if($groupID == "No Results") {
 	//$groupID = -1;
 }
 $out = array();
 if($id <= 0) {
-	$out = prepCreate($groupID);
+	if($del == "true") {
+		$out["status"] = "saved";
+		$out["error"] = $del; 
+	}
+	else {
+		$out = prepCreate($groupID);
+	}
 }
 else {
 	$conn = login();
-	$result = $conn->query("UPDATE place SET 
-		name='$title',
-		address='$add',
-		lat='$lat',
-		lng='$lng',
-		group_key='$groupID', 
-		sub_group='$subgroup',
-		position='$num',
-		visited='$visited'
-		WHERE ID='$id'");
-	if(!$result) {
-		$out["status"] = "error";
+	if($del == "true") {
+		$result = $conn->query("DELETE FROM place WHERE ID='$id'");
+		if(!$result) {
+			$out["status"] = "error";
+		}
+		else {
+			$out["status"] = "saved";
+			$out["ID"] = "$id";
+		}
 	}
 	else {
-		$out["status"] = "saved";
-		$out["ID"] = "$id";
+		$result = $conn->query("UPDATE place SET 
+			name='$title',
+			address='$add',
+			lat='$lat',
+			lng='$lng',
+			group_key='$groupID', 
+			sub_group='$subgroup',
+			position='$num',
+			visited='$visited'
+			WHERE ID='$id'");
+		if(!$result) {
+			$out["status"] = "error";
+		}
+		else {
+			$out["status"] = "saved";
+			$out["ID"] = "$id";
+		}
 	}
 	$conn->close();
 }
@@ -62,7 +85,7 @@ function prepCreate($groupID) {
 	$out["rows"] = $rows;
 	if($rows <= 0) {
 		$out["status"] = "Error";
-		if($groupID == "No Results") {
+		if(!($groupID > 0)) {
 			$out["error"] = "Please Sign in or Login to save";
 		}
 	}

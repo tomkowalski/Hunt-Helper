@@ -68,7 +68,8 @@ function update() {
         address: marker.add,
         group: group,
         subgroup: marker.group,
-        visited: marker.visited
+        visited: marker.visited,
+        del: marker.del
       },
       dataType:'json',
       type:"POST",
@@ -83,6 +84,9 @@ function update() {
       },
       error:function(xhr, status, errorThrown){
         $("#save").attr("value","Error");
+        if(data["status"] == "Error") {
+          alert(data["error"]);
+        }
       }
     });
   }
@@ -121,13 +125,16 @@ function makeMarker(data) {
       add: data["address"],
       ID: data["ID"],    
       visited: false,
-      group: data["group_key"]
+      group: data["sub_group"],
+      del: false
     });
     markers.push(marker);
     if(data["position"] > num) {
       num = data["position"];  
     }
-    getAdd(marker);
+    if(marker.add == "") {
+        getAdd(marker);
+    }
     var infoWindow = new google.maps.InfoWindow({});
     google.maps.event.addListener(infoWindow, 'domready', function() {
       $('input[type="button"][value="edit"]').click(function() {
@@ -137,6 +144,7 @@ function makeMarker(data) {
       });
       $('input[type="button"][value="delete"]').click(function() {
         marker.setMap(null);
+        marker.del = true;
       });
       $('input[type="button"][value="move"]').click(function() {
         marker.setDraggable(true);
