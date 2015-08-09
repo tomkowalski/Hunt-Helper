@@ -10,35 +10,39 @@ $add = $_POST['address'];
 $group = $_POST['group'];
 $subgroup = $_POST['subgroup'];
 $visited = $_POST['visited'];
-$groupID = getOne("SELECT ID from userGroup WHERE name='$group'",'ID');
-$out = "";
-$result = getOne("SELECT ID FROM place WHERE id='$id'", 'ID');
-if($result == "No Results") {
+$groupID = getOne("SELECT ID FROM userGroup WHERE name='$group'", "ID");
+if($groupID == "No Results") {
+	//$groupID = -1;
+}
+$out = array();
+if($id <= 0) {
 	$out = prepCreate($groupID);
 }
 else {
 	$conn = login();
 	$result = $conn->query("UPDATE place SET 
-		name='$title'
-		address='$add'
-		lat='$lat'
-		lng='$lng'
-		group_key='$groupID' 
-		sub_group='$subgroup'
-		position='$num'
+		name='$title',
+		address='$add',
+		lat='$lat',
+		lng='$lng',
+		group_key='$groupID', 
+		sub_group='$subgroup',
+		position='$num',
 		visited='$visited'
 		WHERE ID='$id'");
 	if(!$result) {
-		$out = "error";
+		$out["status"] = "error";
 	}
 	else {
-		$out = "saved";
+		$out["status"] = "saved";
+		$out["ID"] = "$id";
 	}
 	$conn->close();
 }
 header("Content-Type: application/json", true);
 echo json_encode($out);
 function prepCreate($groupID) {
+	$out = array();
 	$num = $_POST['number'];
 	$lat = $_POST['lat'];
 	$lng =$_POST['lng'];
@@ -52,14 +56,19 @@ function prepCreate($groupID) {
 	$in = $conn->prepare('INSERT INTO place VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)');
 	$in->bind_param("ssddiiiii", $title, $add, $lat, $lng, $groupID, $subgroup, $num, $visited, $id);
 	$in->execute();
-	$out = $in->affected_rows;
+	$rows = $in->affected_rows;
 	$in->close();
 	$conn->close();
-	if($out == 0) {
-		$out = "Error";
+	$out["rows"] = $rows;
+	if($rows <= 0) {
+		$out["status"] = "Error";
+		if($groupID == "No Results") {
+			$out["error"] = "Please Sign in or Login to save";
+		}
 	}
 	else {
-		$out = "Saved";
+		$out["status"] = "Saved";
+		$out["ID"] = getOne("SELECT ID FROM place WHERE name='$title' AND address='$add' AND group_key='$groupID' AND position='$num'", "ID");
 	}
 	return $out; 
 }

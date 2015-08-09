@@ -43,7 +43,7 @@ __HTML;
 					<img src="$path/assets/logo(small).png">
 					<ul>
 						<li><a href="$path/index.php"> Map </a></li>
-						<li id='group'> $group </li>
+						<li id='group'>$group</li>
 						<li> Location </li>
 						<li> My Route </l1>
 						<li><a href="$path/login.php"> my $name </a></li>

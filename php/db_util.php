@@ -21,7 +21,7 @@
 	function getOne($query, $key) {
 		$conn = login();
 		$result = $conn->query($query);
-		if($result->num_rows > 0) {
+		if($result) {
 			$row = $result->fetch_assoc();
 			$out = $row[$key];
 		}
