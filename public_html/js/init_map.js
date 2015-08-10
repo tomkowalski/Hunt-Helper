@@ -3,9 +3,18 @@ var map;
 var geocoder;
 var markers = [];
 function initialize() {
+  var pos = new google.maps.LatLng(42.3601, -71.0589);
+  /*if(navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(function(position) {
+      pos = new google.maps.LatLng(position.coords.latitude,
+                                       position.coords.longitude);
+    });
+  }*/
+
+    
   var mapOptions = {
-    zoom: 14,
-    center: new google.maps.LatLng(42.3601, -71.0589)
+    zoom: 10,
+    center: pos
   };
   geocoder = new google.maps.Geocoder();
   map = new google.maps.Map(document.getElementById('map-canvas'),

@@ -21,12 +21,12 @@
 	function getOne($query, $key) {
 		$conn = login();
 		$result = $conn->query($query);
-		if($result) {
-			$row = $result->fetch_assoc();
-			$out = $row[$key];
+		if(!$result) {
+			$out = "No Results";
 		}
 		else {
-			$out = "No Results";
+			$row = $result->fetch_assoc();
+			$out = $row[$key];	
 		}
 		$conn->close();
 		$result->close();

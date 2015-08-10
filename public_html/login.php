@@ -33,13 +33,17 @@ __HTML;
 	else {
 		if(isset($_POST['uName'])
 		&& isset($_POST['pWord'])) {
-			$name = $_POST['uName'];
-			$pass = $_POST['pWord'];
+			$name = escape($_POST['uName']);
+			$pass = escape($_POST['pWord']);
 			$result = getOne("SELECT ID FROM user 
-				WHERE username='$name' AND pass='$pass'", 'ID');
+				WHERE username='$name'", 'ID');
 			if($result != "No Results") {
-				$_SESSION['ID'] = $result;
-				$_SESSION['set'] = true;
+				$id = $result;
+				$result = getOne("SELECT pass FROM user 
+				WHERE ID='$id'", 'pass');
+				if(password_verify($pass ,$result)) {
+					$_SESSION['ID'] = $id;
+				}
 			}
 			include("index.php");
 		}
@@ -59,5 +63,10 @@ __HTML;
 		echo foot(".");
 		}
 	}
+	function escape($str) {
+		$conn = login();
+		$str = $conn->real_escape_string($str);
+		return htmlspecialchars($str);
+	} 
 
 ?>

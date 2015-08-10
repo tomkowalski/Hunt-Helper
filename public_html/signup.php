@@ -3,7 +3,8 @@
 	require_once('../php/footer.php');
 	require_once('../php/db_util.php');
 	session_start();
-	if(isset($_SESSION["ID"]) {
+	$body = null;
+	if(isset($_SESSION["ID"])) {
 		$body .= "already signed in";
 	}
 	else {
@@ -18,9 +19,12 @@
 			//&& isset($_POST["emailConf"])
 			/*&& isset($_POST["gPass"])*/) {
 				$rows = prep();
-				if($rows == 1) {
+				if($rows == 1) {	
+					$_SESSION["signup"] = "YES";
+					$_SESSION["temp_uname"] = escape($_POST["uName"]);
 					include("group_signup.php");
-					$body = group($_POST["uName"]);
+					$body = group();
+					$_SESSION["signup"] = null;
 				}
 				else {
 					$_SESSION["error"] = $rows;
@@ -32,7 +36,7 @@
 		}
 		$error = $_SESSION["error"];
 		if($body == null) {
-			$body .= <<<__HTML
+			$body = <<<__HTML
 			$error
 			<h1> Sign up below: </h1>
 			<div class="form">
@@ -57,25 +61,32 @@ __HTML;
 	//Email Confirm: <input type = "email" name="emailConf"><br>
 	//Group Password: <input type = "password" name="gPass"><br>
 	function prep() {
-		$f = $_POST["fName"];
-		$l = $_POST["lName"];
-		$u = $_POST["uName"];
-		$p = $_POST["pass"];
-		$e = $_POST["email"];
+		$f = escape($_POST["fName"]);
+		$l = escape($_POST["lName"]);
+		$u = escape($_POST["uName"]);
+		$p = escape($_POST["pass"]);
+		$e = escape($_POST["email"]);
 		$id = null;
 		$g = null;
 		$sg = null;
-		if(getOne("SELECT * FROM user WHERE username='$u'", 'username') != "No Results") {
+		$out = "";
+		$result = getOne("SELECT * FROM user WHERE username='$u'", 'username');
+		if($result != "No Results" && $result != "") {
 			$out = "That user name is already taken <br>";
 		}
-		if(getOne("SELECT * FROM user WHERE email='$e'", 'email') != "No Results") {
+		$result = getOne("SELECT * FROM user WHERE email='$e'", 'email');
+		if($result != "No Results" && $result != "") {
 			$out .=  "That email is already taken <br>";
+		}
+		$hash = password_hash($p, PASSWORD_DEFAULT);
+		if(!$hash) {
+			$out .= "Error try again";
 		}
 		if($out == "") {
 			//require_once('../php/db_util.php');
 			$conn = login();
 			$in = $conn->prepare('INSERT INTO user VALUES(?, ?, ?, ?, ?, ?, ?, ?)');
-			$in->bind_param("sssssiii", $f, $l, $u, $p, $e, $g, $sg, $id);
+			$in->bind_param("sssssiii", $f, $l, $u, $hash, $e, $g, $sg, $id);
 			$in->execute();
 			$out = $in->affected_rows;
 			$in->close();
@@ -86,4 +97,9 @@ __HTML;
 		}
 		return $out; 
 	}
+	function escape($str) {
+		$conn = login();
+		$str = $conn->real_escape_string($str);
+		return htmlspecialchars($str);
+	} 
 ?>

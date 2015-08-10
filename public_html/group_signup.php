@@ -4,6 +4,7 @@ require_once('../php/header.php');
 require_once('../php/footer.php');
 require_once('../php/db_util.php');
 if(isset($_POST["type"])) {
+	$uname = $_SESSION["temp_uname"];
 	if($_POST["type"] == 'old'){
 		$body = change();
 	}
@@ -13,16 +14,16 @@ if(isset($_POST["type"])) {
 			$pass = true;
 			if(isset($_POST["pass"])
 			|| isset($_POST["passconf"])) {
-				if($_POST["pass"] != $_POST["passconf"]){
+				if(escaped($_POST["pass"]) != escaped($_POST["passconf"])){
 					$pass = false;
 					$body = "Passwords do not Match" . group($uname);
 				}
 			}
 			if($pass) {
-				$gname = $_POST["name"];
+				$gname = escaped($_POST["name"]);
 				$result = getOne("SELECT * FROM userGroup WHERE name='$gname'", "name");
-				if($result == "No Results"){
-					$out = prep();
+				if($result == "No Results" || $result == ""){
+					$out = gprep();
 					if($out == 1) {
 						$body = "<h1> Group created </h1>" . change();
 					}
@@ -41,21 +42,24 @@ if(isset($_POST["type"])) {
 	}
 }
 else {
-	if(isset($_SESSION['set'])) {
+	if(isset($_SESSION['ID'])) {
 		require_once("../php/db_util.php");
 		$id = $_SESSION['ID'];
-		$body = group(getOne("SELECT * FROM user WHERE ID='$id'","username"));
+		$_SESSION['temp_uname'] = getOne("SELECT * FROM user WHERE ID='$id'","username");
+		$body = group();
 	}
 	else {
 	$body = "<h1> Please log in or sign up </h1>";
 	}
 }
-echo head(".", "Sign Up");
-echo $body;
-echo foot(".");
-function group($uname) {
+if($_SESSION["signup"] != "YES") {
+	echo head(".", "Sign Up");
+	echo $body;
+	echo foot(".");
+}
+
+function group() {
 	session_start();
-		$_SESSION["temp_uname"] = $uname;
 		return <<<__HTML
 		<h1> Join a Group: </h1>
 				<div class="form">
@@ -78,9 +82,9 @@ function group($uname) {
 				</div>
 __HTML;
 }
-function prep() {
-	$n = $_POST["name"];
-	$p = $_POST["pass"];
+function gprep() {
+	$n = escaped($_POST["name"]);
+	$p = password_hash(escaped($_POST["pass"]), PASSWORD_DEFAULT);
 	$id = null;
 	require_once('../php/db_util.php');
 	$conn = login();
@@ -96,7 +100,7 @@ function prep() {
 	return $out; 
 }
 function change(){
-	$gName = $_POST["name"];
+	$gName = escaped($_POST["name"]);
 	require_once("../php/db_util.php"); 
 	if(isset($_SESSION["ID"])){
 		$uID = $_SESSION["ID"];
@@ -105,27 +109,39 @@ function change(){
 		$uname = $_SESSION["temp_uname"];
 		$uID = getOne("SELECT * FROM user WHERE username='$uname'","ID");
 	}
-	$gPass = $_POST["pass"];
-	$groupID = getOne("SELECT * FROM userGroup WHERE name='$gName' AND pass='$gPass'", "ID");
+	$gPass = escaped($_POST["pass"]);
+	$groupID = getOne("SELECT * FROM userGroup WHERE name='$gName'", "ID");
 	if($groupID != "No Results") {
-		$conn = login();
-		$result = $conn->query("UPDATE user SET group_key='$groupID' WHERE ID='$uID'");
-		if($result) {
-			$out = <<<__HTML
-				<h2> Joined $gName </h2>
+		//echo password_hash($gPass, PASSWORD_DEFAULT) . "\n" . getOne("SELECT * FROM userGroup WHERE ID='$groupID'", "pass");
+		if(password_verify($gPass, getOne("SELECT * FROM userGroup WHERE ID='$groupID'", "pass"))) {
+			$conn = login();
+			$result = $conn->query("UPDATE user SET group_key='$groupID' WHERE ID='$uID'");
+			if($result) {
+				$out = <<<__HTML
+					<h2> Joined $gName </h2>
+__HTML;
+				}
+			else {
+				$out= <<<__HTML
+					<h1> Error joining $gName </h1>
 __HTML;
 			}
-		else {
-			$out= <<<__HTML
-				<h1> Error joining $gName </h1>
-__HTML;
+			$conn->close();
 		}
-		$conn->close();
+		else {
+			$out = "group Name or Password is Incorrect";
+			$out .= group($uname);
+		}
 	}
 	else {
-		$out = "Group Name or Password is Incorrect";
-		$out .= group($uname);
+			$out = "Group Name or Password is Incorrect";
+			$out .= group($uname);
 	}
 	return $out;
 }
+function escaped($str) {
+		$conn = login();
+		$str = $conn->real_escape_string($str);
+		return htmlspecialchars($str);
+	} 
 ?>
