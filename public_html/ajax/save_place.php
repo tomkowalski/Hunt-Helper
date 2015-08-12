@@ -1,76 +1,83 @@
 <?php
 require_once("../../php/db_util.php");
-if(!isset($_POST['id'])) {
-	$id = -1;
-}
-else {
-	$id = $_POST['id'];	
-}
-$num = $_POST['number'];
-$lat = $_POST['lat'];
-$lng =$_POST['lng'];
-$title = $_POST['title'];
-$add = $_POST['address'];
-$group = $_POST['group'];
-$subgroup = $_POST['subgroup'];
-$visited = $_POST['visited'];
-$del = $_POST['del'];
-$groupID = getOne("SELECT ID FROM userGroup WHERE name='$group'", "ID");
-if($groupID == "No Results") {
-	//$groupID = -1;
-}
 $out = array();
-if($id <= 0) {
-	if($del == "true") {
-		$out["status"] = "saved";
-		$out["error"] = $del; 
+$i = 0;
+foreach($_POST["array"] as $marker) {
+	if(!isset($marker['id'])) {
+		$id = -1;
 	}
 	else {
-		$out = prepCreate($groupID);
+		$id = escape($marker['id']);	
 	}
-}
-else {
-	$conn = login();
-	if($del == "true") {
-		$result = $conn->query("DELETE FROM place WHERE ID='$id'");
-		if(!$result) {
-			$out["status"] = "error";
+	$num = escape($marker['number']);
+	$lat = escape($marker['lat']);
+	$lng =escape($marker['lng']);
+	$title = escape($marker['title']);
+	$add = escape($marker['address']);
+	$group = escape($marker['group']);
+	$subgroup = escape($marker['subgroup']);
+	$visited = escape($marker['visited']);
+	$del = escape($marker['del']);
+	$groupID = getOne("SELECT ID FROM userGroup WHERE name='$group'", "ID");
+	if($groupID == "No Results") {
+		//$groupID = -1;
+	}
+	$tempOut = array();
+	if($id <= 0) {
+		if($del == "true") {
+			$tempOut["status"] = "saved";
+			$tempOut["del"] = "yes";
 		}
 		else {
-			$out["status"] = "saved";
-			$out["ID"] = "$id";
+			$tempOut = prepCreate($groupID, $marker);
 		}
 	}
 	else {
-		$result = $conn->query("UPDATE place SET 
-			name='$title',
-			address='$add',
-			lat='$lat',
-			lng='$lng',
-			group_key='$groupID', 
-			sub_group='$subgroup',
-			position='$num',
-			visited='$visited'
-			WHERE ID='$id'");
-		if(!$result) {
-			$out["status"] = "error";
+		$conn = login();
+		if($del == "true") {
+			$result = $conn->query("DELETE FROM place WHERE ID='$id'");
+			if(!$result) {
+				$tempOut["status"] = "error";
+			}
+			else {
+				$tempOut["status"] = "saved";
+				$tempOut["ID"] = $id;
+				$tempOut["del"] = "yes";
+			}
 		}
 		else {
-			$out["status"] = "saved";
-			$out["ID"] = "$id";
+			$result = $conn->query("UPDATE place SET 
+				name='$title',
+				address='$add',
+				lat='$lat',
+				lng='$lng',
+				group_key='$groupID', 
+				sub_group='$subgroup',
+				position='$num',
+				visited='$visited'
+				WHERE ID='$id'");
+			if(!$result) {
+				$tempOut["status"] = "error";
+			}
+			else {
+				$tempOut["status"] = "saved";
+				$tempOut["ID"] = $id;
+			}
 		}
+		$conn->close();
 	}
-	$conn->close();
+	$out[$i] = $tempOut;
+	$i += 1;
 }
 header("Content-Type: application/json", true);
 echo json_encode($out);
-function prepCreate($groupID) {
-	$out = array();
-	$num = $_POST['number'];
-	$lat = $_POST['lat'];
-	$lng =$_POST['lng'];
-	$title = $_POST['title'];
-	$add = $_POST['address'];
+function prepCreate($groupID, $marker) {
+	$tempOut = array();
+	$num = escape($marker['number']);
+	$lat = escape($marker['lat']);
+	$lng =escape($marker['lng']);
+	$title = escape($marker['title']);
+	$add = escape($marker['address']);
 	$subgroup = null;
 	$visited = 0;
 	$id = null;
@@ -82,17 +89,22 @@ function prepCreate($groupID) {
 	$rows = $in->affected_rows;
 	$in->close();
 	$conn->close();
-	$out["rows"] = $rows;
+	$tempOut["rows"] = $rows;
 	if($rows <= 0) {
-		$out["status"] = "Error";
+		$tempOut["status"] = "Error";
 		if(!($groupID > 0)) {
-			$out["error"] = "Please Sign in or Login to save";
+			$tempOut["error"] = "Please Sign in or Login to save";
 		}
 	}
 	else {
-		$out["status"] = "Saved";
-		$out["ID"] = getOne("SELECT ID FROM place WHERE name='$title' AND address='$add' AND group_key='$groupID' AND position='$num'", "ID");
+		$tempOut["status"] = "Saved";
+		$tempOut["ID"] = getOne("SELECT ID FROM place WHERE name='$title' AND address='$add' AND group_key='$groupID' AND position='$num'", "ID");
 	}
-	return $out; 
+	return $tempOut; 
+}
+function escape($str) {
+	$conn = login();
+	$str = $conn->real_escape_string($str);
+	return htmlspecialchars($str);
 }
 ?>

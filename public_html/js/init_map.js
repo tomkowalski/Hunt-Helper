@@ -2,6 +2,7 @@ var num = 0;
 var map;
 var geocoder;
 var markers = [];
+var requestActive = false;
 function initialize() {
   var pos = new google.maps.LatLng(42.3601, -71.0589);
   /*if(navigator.geolocation) {
@@ -28,6 +29,7 @@ function initialize() {
       name: "Location",
       address: "",
       ID: -1,    
+      sub_group: 0,
       group_key: null
     });
   });
@@ -60,44 +62,66 @@ function loadScript() {
   script.src = 'https://maps.googleapis.com/maps/api/js?libraries=places&v=3.exp$key=AIzaSyA0lAOq5lLPLFlJ6mxDOIvJK_5y1WBE28Y' +
       '&signed_in=true&callback=initialize';
   document.body.appendChild(script);
-  $("#save").click(update);
+  $("#save").click(update)
 }
 function update() {
   var group = $("#group").text();
+  var out = [];
   for(var i = 0; i < markers.length; i++) {
     var marker = markers[i];
+    out[i] = {
+      id: marker.ID,
+      number: marker.number,
+      lat: marker.getPosition().lat(),
+      lng: marker.getPosition().lng(),
+      title: marker.h1,
+      address: marker.add,
+      group: group,
+      subgroup: marker.group,
+      visited: marker.visited,
+      del: marker.del
+    };
+  }
+  if(!requestActive) {
+    requestActive = true;
+    $status = "Saved";
     $.ajax({
       url: 'ajax/save_place.php',
-      data:{
-        id: marker.ID,
-        number: marker.number,
-        lat: marker.getPosition().lat(),
-        lng: marker.getPosition().lng(),
-        title: marker.h1,
-        address: marker.add,
-        group: group,
-        subgroup: marker.group,
-        visited: marker.visited,
-        del: marker.del
+      data: {
+      array: out
       },
       dataType:'json',
       type:"POST",
       success:function(data) {
-        $("#save").attr("value", data["status"]);
-        if(data["status"] == "Error") {
-          alert(data["error"]);
-        }
-        else {
-          marker.ID = data["ID"];
+        for(var i = data.length - 1; i >= 0; i--){
+          if(data[i]["status"] == "Error") {
+            alert(data[i]["error"]);
+            $status = "Error";
+          }
+          else {
+            var marker = markers[i];
+            if(data[i]["del"] == "yes") {
+              markers.splice(i, 1);
+            }
+            else {
+              if(marker.ID == -1) {
+                marker.ID = data[i].ID;
+              }
+            } 
+          }
         }
       },
       error:function(xhr, status, errorThrown){
-        $("#save").attr("value","Error");
-        if(data["status"] == "Error") {
-          alert(data["error"]);
+        $status = "Error";
+        for(var i = 0; i < data.length; i++){
+          if(data[i]["status"] == "Error") {
+            alert(data["error"]);
+          }
         }
       }
     });
+    requestActive = false;  
+    $("#save").attr("value", $status);
   }
 }
 function getAdd(marker) {
