@@ -3,6 +3,7 @@ var map;
 var geocoder;
 var markers = [];
 var requestActive = false;
+var autocomplete;
 function initialize() {
   var pos = new google.maps.LatLng(42.3601, -71.0589);
   /*if(navigator.geolocation) {
@@ -15,11 +16,36 @@ function initialize() {
     
   var mapOptions = {
     zoom: 10,
-    center: pos
+    center: pos,
+    mapTypeControl: true,
+    mapTypeControlOptions: {
+        style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
+        position: google.maps.ControlPosition.BOTTOM_LEFT
+    },
   };
   geocoder = new google.maps.Geocoder();
   map = new google.maps.Map(document.getElementById('map-canvas'),
       mapOptions);
+  autocomplete = new google.maps.places.Autocomplete($('#auto-c').get(0));
+  autocomplete.bindTo('bounds', map);
+  map.controls[google.maps.ControlPosition.TOP_LEFT].push($('#auto-c').get(0));
+  map.controls[google.maps.ControlPosition.BOTTOM_CENTER].push($('#save').get(0));
+
+google.maps.event.addListener(autocomplete, 'place_changed', function() {
+    var place = autocomplete.getPlace();
+    makeMarker({
+      lat: place.geometry.location.lat(),
+      lng: place.geometry.location.lng(),
+      position: num++,
+      name: place.name,
+      address: place.formatted_address,
+      ID: -1,    
+      sub_group: 0,
+      group_key: null
+    });
+    map.panTo(place.geometry.location);
+    map.setZoom(15);
+  });
 
   google.maps.event.addListener(map, 'click', function(event) {
     makeMarker({
@@ -65,6 +91,7 @@ function loadScript() {
   $("#save").click(update)
 }
 function update() {
+
   var group = $("#group").text();
   var out = [];
   for(var i = 0; i < markers.length; i++) {
@@ -84,7 +111,8 @@ function update() {
   }
   if(!requestActive) {
     requestActive = true;
-    $status = "Saved";
+    var status = "Saved";
+    var error = "";
     $.ajax({
       url: 'ajax/save_place.php',
       data: {
@@ -95,8 +123,13 @@ function update() {
       success:function(data) {
         for(var i = data.length - 1; i >= 0; i--){
           if(data[i]["status"] == "Error") {
-            alert(data[i]["error"]);
-            $status = "Error";
+            if(data[i]["error"] == "Please Sign in or Login to save") {
+              error = data[i]["error"];
+            }
+            else {
+              alert(data[i]["error"]);
+            }
+            status = "Error";
           }
           else {
             var marker = markers[i];
@@ -110,18 +143,22 @@ function update() {
             } 
           }
         }
+        if(status == "Error") {
+          alert(error);
+        }
+        $("#save").attr("value", status);
       },
       error:function(xhr, status, errorThrown){
-        $status = "Error";
+        status = "Error";
         for(var i = 0; i < data.length; i++){
           if(data[i]["status"] == "Error") {
             alert(data["error"]);
           }
         }
+        $("#save").attr("value", status);
       }
     });
-    requestActive = false;  
-    $("#save").attr("value", $status);
+    requestActive = false;      
   }
 }
 function getAdd(marker) {
