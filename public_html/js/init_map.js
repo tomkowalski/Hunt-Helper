@@ -47,7 +47,7 @@ google.maps.event.addListener(autocomplete, 'place_changed', function() {
     map.setZoom(15);
   });
 
-  google.maps.event.addListener(map, 'click', function(event) {
+  google.maps.event.addListener(map, 'dblclick', function(event) {
     makeMarker({
       lat: event.latLng.lat(),
       lng: event.latLng.lng(),

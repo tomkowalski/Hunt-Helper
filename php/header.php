@@ -21,6 +21,11 @@ __HTML;
 			<script type="text/javascript" src="$path/js/init_map.js"></script>
 __HTML;
 		}	
+		if($page == "Location") {
+			$out .= <<<__HTML
+			<script type="text/javascript" src="$path/js/save_places.js"></script>
+__HTML;
+		}
 		$out .= "<style>
 				nav li {
 					width: $width%;
@@ -42,11 +47,11 @@ __HTML;
 			<nav> 
 					<img src="$path/assets/logo(small).png">
 					<ul>
-						<li><a href="$path/index.php"> Map </a></li>
+						<li><a href="$path/index.php">Map</a></li>
 						<li id='group'>$group</li>
-						<li> Location </li>
-						<li> My Route </l1>
-						<li><a href="$path/login.php"> my $name </a></li>
+						<li><a href='location.php'>Location</a></li>
+						<li>My Route</l1>
+						<li><a href="$path/login.php">My $name</a></li>
 					</ul>
 				</nav>
 __HTML;
@@ -57,9 +62,9 @@ __HTML;
 			<nav> 
 					<img src="$path/assets/logo(small).png">
 					<ul>
-						<li><a href="$path/index.php"> Map </a></li>
-						<li> Location </li>
-						<li><a href="$path/login.php"> Login</a>
+						<li><a href="$path/index.php">Map</a></li>
+						<li><a href='location.php'>Location</a></li>
+						<li><a href="$path/login.php">Login</a>
  </l1>
 					</ul>
 				</nav>

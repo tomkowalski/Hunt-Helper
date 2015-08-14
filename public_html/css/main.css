@@ -108,3 +108,11 @@ html, body, #map-canvas {
 #save:hover {
 	opacity: 0.85;
 }
+#mass_place {
+	width:75%;
+	height:15em;
+	padding-left: 1em;
+	padding-top: 1em;
+	margin-left: 1em;
+	margin-bottom: 1em;
+}

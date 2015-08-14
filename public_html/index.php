@@ -5,7 +5,7 @@
 	$body =  <<<__HTML
 	<body>
 		<input id="auto-c" class="controls" type="text" placeholder="Enter a location">
-		<div id="map-canvas"> <h1>Please enable javascript <h1></div>
+		<div id="map-canvas"> <nosript><h1>Please enable javascript <h1></noscript></div>
 		<div class="form">
 			<input id="save" type='button' value="Save Places">
 		</div>
