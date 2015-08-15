@@ -2,7 +2,11 @@
 session_start();
 require_once('../php/header.php');
 require_once('../php/footer.php');
-$select = "<select id='route_select' multiple='multiple'> \n" . getRoutes() . "\n </select>";
+$routes = getRoutes(); 
+$select = "<select id='route_view' multiple='multiple'> \n" . $routes . "\n </select>"
+		. "<select id='route_select' multiple='multiple'> \n" 
+		. "<option value='NONE'> No Route</option>"
+		. $routes . "\n </select>";
 $body =  <<<__HTML
 <body>
 	<div id="map-canvas"> <nosript><h1>Please enable javascript <h1></noscript></div>

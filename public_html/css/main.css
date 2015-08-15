@@ -120,10 +120,16 @@ input[type="button"]:hover {
 	margin-right: 1em;
 	margin-top: 1em;
 }
+#route_view {
+	width: 20%;
+}
 #route_select {
 	width: 20%;
 }
 input[type="checkbox"] {
+	width: auto;
+}
+input[type="radio"] {
 	width: auto;
 }
 .ms-drop.bottom input[type="text"] {
@@ -131,8 +137,14 @@ input[type="checkbox"] {
 	margin-left: 1em;
 	margin-top: -2em;
 }
-#new_route {
+#new_route input[type="button"] {
 	margin-top: .5em;
 	margin-right: 1em;
 	font-size: 1.5em;
+}
+.info_window input[type="button"] {
+	font-size: 1.25em;
+	display: inline;	
+	vertical-align: middle;	
+	width: 30%;
 }

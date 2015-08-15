@@ -4,6 +4,9 @@ var geocoder;
 var markers = [];
 var requestActive = false;
 var autocomplete;
+var newRoute = true;
+var add = false;
+var route = null;
 function initialize() {
   var pos = new google.maps.LatLng(42.3601, -71.0589);
   /*if(navigator.geolocation) {
@@ -21,7 +24,7 @@ function initialize() {
     disableDoubleClickZoom: true, 
     mapTypeControlOptions: {
         style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
-        position: google.maps.ControlPosition.RIGHT_BOTTOM
+        position: google.maps.ControlPosition.LEFT_BOTTOM
     },
   };
   geocoder = new google.maps.Geocoder();
@@ -31,9 +34,9 @@ function initialize() {
     + '<div class="form">'
     + '<input id="save" type="button" value="Save Places">'
     + '</div>'
-    + '<input id="new_route" type="button" value="New Route">');
+    + '<div id="new_route"><input id="new_route_button" type="button" value="New Route"></div>');
    $("#save").click(update);
-   $('#route_select').multipleSelect({
+   $('#route_view').multipleSelect({
     placeholder: "Select Routes",
     onOpen: function() {
       $("#new_route").hide();
@@ -48,14 +51,16 @@ function initialize() {
     },
     onUncheckAll: function() {
       for(var i = 0; i < markers.length; i++) {
-        markers[i].setMap(null);
+        if(markers[i].group != null && markers[i].group != 0) {
+          markers[i].setMap(null);
+        }
       }
     },
     onClick: function(view) {
       //alert(view.label + view.checked);
       for(var i = 0; i < markers.length; i++) {
         if(markers[i].group != null 
-        && markers[i].group.trim() 
+        && markers[i].group.toString().trim() 
         == view.label.trim()) {
           if(view.checked) {
             markers[i].setMap(map);
@@ -65,15 +70,50 @@ function initialize() {
           }
         }
       }
+    },
+  });
+  $('#route_select').multipleSelect({
+    placeholder: "Add To Route",
+    single: true,
+    position: 'top',
+    onClick: function(view) {
+      if(view.label.trim() != "No Route") {
+        add = true;
+        route = view.label.trim();  
+      } 
+      else {
+        add = false;
+        route = null;
+      }
+      //alert(view.label + view.checked);
     }
   });
-  $("select").multipleSelect("checkAll");
+  $("#route_view").multipleSelect("checkAll");
   autocomplete = new google.maps.places.Autocomplete($('#auto-c').get(0));
   autocomplete.bindTo('bounds', map);
   map.controls[google.maps.ControlPosition.TOP_LEFT].push($('#auto-c').get(0));
   map.controls[google.maps.ControlPosition.BOTTOM_CENTER].push($('#save').get(0));
-  map.controls[google.maps.ControlPosition.TOP_RIGHT].push($('.ms-parent').get(0));
+  map.controls[google.maps.ControlPosition.TOP_RIGHT].push($('.ms-parent:eq(0)').get(0));
+  map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push($('.ms-parent:eq(1)').get(0));
   map.controls[google.maps.ControlPosition.RIGHT_TOP].push($('#new_route').get(0));
+  $("#new_route_button").click(function() {
+    if(newRoute) {
+      $("#new_route").prepend("<input id='new_route_text' type='text' placeholder='Route Name'>");
+      $("#new_route_button").attr("value","Create");
+    }
+    else {
+      var route = "<option value='"
+        + $("#new_route_text").val() + "'>"
+        + $("#new_route_text").val() + "</option>";
+      $("select").append(route).multipleSelect("refresh");
+      var get_sel = $("#route_view").multipleSelect('getSelects');
+      get_sel.push($("#new_route_text").val());
+      $("#route_view").multipleSelect('setSelects', get_sel);
+      $("#new_route_text").remove();
+      $("#new_route_button").attr("value","Change Route");
+    }
+    newRoute = !newRoute;
+  });
 
 google.maps.event.addListener(autocomplete, 'place_changed', function() {
     var place = autocomplete.getPlace();
@@ -84,7 +124,7 @@ google.maps.event.addListener(autocomplete, 'place_changed', function() {
       name: place.name,
       address: place.formatted_address,
       ID: -1,    
-      sub_group: 0,
+      sub_group: null,
       group_key: null
     });
     map.panTo(place.geometry.location);
@@ -214,17 +254,17 @@ function getAdd(marker) {
       }
     } 
     else {
-      window.alert('Geocoder failed due to: ' + status);
+      marker.add = "";
     }
   });     
 }
 function content(marker, infoWindow) {
-  infoWindow.setContent("<h1>" + marker.h1 + "</h1><p>" + marker.add +               
+  infoWindow.setContent("<div class='info_window'><h1>" + marker.h1 + "</h1><p>" + marker.add +               
         "</p> Change name:<input type='text'>\
                           <input type='button' value='edit'><br>\
                           <input type='button' value='delete'>\
                           <input type='button' value='move'>\
-                          <input type='button' value='visit'>");
+                          <input type='button' value='visit'></div>");
      
  }
 function makeMarker(data) {
@@ -270,7 +310,12 @@ function makeMarker(data) {
     });
     google.maps.event.addListener(marker, 'click', function(event) {
       content(marker, infoWindow);
-      infoWindow.open(map, marker);
+      if(!add) {
+        infoWindow.open(map, marker);
+      }
+      else {
+        marker.group = route;
+      }
     });
     google.maps.event.addListener(marker, 'dragend', function(event) {
       marker.setDraggable(false);
