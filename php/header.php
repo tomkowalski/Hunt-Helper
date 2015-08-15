@@ -19,6 +19,9 @@ __HTML;
 		if($page == "Map")	{
 			$out .= <<<__HTML
 			<script type="text/javascript" src="$path/js/init_map.js"></script>
+			<link rel="stylesheet" href="$path/css/multiple-select.css"/>
+			<script src="$path/js/jquery.multiple.select.js"></script>
+
 __HTML;
 		}	
 		if($page == "Location") {

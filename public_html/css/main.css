@@ -86,10 +86,10 @@ html, body, #map-canvas {
 	border: none;
 	height: 2em;
 	font-size: 1.25em;
-	width: 75%; 
+	width: 60%; 
 	padding-left: .5em;
 }
-#save {
+input[type="button"] {
 	margin-bottom: 10px;
 	border: 0;
 	height: 1.5em;
@@ -105,7 +105,7 @@ html, body, #map-canvas {
 	-webkit-appearance: none;
 	-webkit-font-smoothing: antialiased;
 }
-#save:hover {
+input[type="button"]:hover {
 	opacity: 0.85;
 }
 #mass_place {
@@ -115,4 +115,24 @@ html, body, #map-canvas {
 	padding-top: 1em;
 	margin-left: 1em;
 	margin-bottom: 1em;
+}
+.ms-parent {
+	margin-right: 1em;
+	margin-top: 1em;
+}
+#route_select {
+	width: 20%;
+}
+input[type="checkbox"] {
+	width: auto;
+}
+.ms-drop.bottom input[type="text"] {
+	width: 90%;
+	margin-left: 1em;
+	margin-top: -2em;
+}
+#new_route {
+	margin-top: .5em;
+	margin-right: 1em;
+	font-size: 1.5em;
 }

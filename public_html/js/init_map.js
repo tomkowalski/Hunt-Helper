@@ -18,18 +18,62 @@ function initialize() {
     zoom: 10,
     center: pos,
     mapTypeControl: true,
+    disableDoubleClickZoom: true, 
     mapTypeControlOptions: {
         style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
-        position: google.maps.ControlPosition.BOTTOM_LEFT
+        position: google.maps.ControlPosition.RIGHT_BOTTOM
     },
   };
   geocoder = new google.maps.Geocoder();
   map = new google.maps.Map(document.getElementById('map-canvas'),
       mapOptions);
+  $("nav").after('<input id="auto-c" class="controls" type="text" placeholder="Enter a location">'
+    + '<div class="form">'
+    + '<input id="save" type="button" value="Save Places">'
+    + '</div>'
+    + '<input id="new_route" type="button" value="New Route">');
+   $("#save").click(update);
+   $('#route_select').multipleSelect({
+    placeholder: "Select Routes",
+    onOpen: function() {
+      $("#new_route").hide();
+    },
+    onClose: function() {
+      $("#new_route").show();
+    },
+    onCheckAll: function() {
+      for(var i = 0; i < markers.length; i++) {
+        markers[i].setMap(map);
+      }
+    },
+    onUncheckAll: function() {
+      for(var i = 0; i < markers.length; i++) {
+        markers[i].setMap(null);
+      }
+    },
+    onClick: function(view) {
+      //alert(view.label + view.checked);
+      for(var i = 0; i < markers.length; i++) {
+        if(markers[i].group != null 
+        && markers[i].group.trim() 
+        == view.label.trim()) {
+          if(view.checked) {
+            markers[i].setMap(map);
+          }
+          else {
+            markers[i].setMap(null);
+          }
+        }
+      }
+    }
+  });
+  $("select").multipleSelect("checkAll");
   autocomplete = new google.maps.places.Autocomplete($('#auto-c').get(0));
   autocomplete.bindTo('bounds', map);
   map.controls[google.maps.ControlPosition.TOP_LEFT].push($('#auto-c').get(0));
   map.controls[google.maps.ControlPosition.BOTTOM_CENTER].push($('#save').get(0));
+  map.controls[google.maps.ControlPosition.TOP_RIGHT].push($('.ms-parent').get(0));
+  map.controls[google.maps.ControlPosition.RIGHT_TOP].push($('#new_route').get(0));
 
 google.maps.event.addListener(autocomplete, 'place_changed', function() {
     var place = autocomplete.getPlace();
@@ -86,9 +130,8 @@ function loadScript() {
   var script = document.createElement('script');
   script.type = 'text/javascript';
   script.src = 'https://maps.googleapis.com/maps/api/js?libraries=places&v=3.exp$key=AIzaSyA0lAOq5lLPLFlJ6mxDOIvJK_5y1WBE28Y' +
-      '&signed_in=true&callback=initialize';
+      '&signed_in=false&callback=initialize';
   document.body.appendChild(script);
-  $("#save").click(update)
 }
 function update() {
 
@@ -178,7 +221,7 @@ function getAdd(marker) {
 function content(marker, infoWindow) {
   infoWindow.setContent("<h1>" + marker.h1 + "</h1><p>" + marker.add +               
         "</p> Change name:<input type='text'>\
-                          <input type='button' value='edit'>\
+                          <input type='button' value='edit'><br>\
                           <input type='button' value='delete'>\
                           <input type='button' value='move'>\
                           <input type='button' value='visit'>");
