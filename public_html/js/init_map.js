@@ -7,8 +7,10 @@ var autocomplete;
 var newRoute = true;
 var add = false;
 var route = null;
+var subG = {};
+var pos;
 function initialize() {
-  var pos = new google.maps.LatLng(42.3601, -71.0589);
+  pos = new google.maps.LatLng(38.8833, -77.0167);
   /*if(navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(function(position) {
       pos = new google.maps.LatLng(position.coords.latitude,
@@ -18,7 +20,7 @@ function initialize() {
 
     
   var mapOptions = {
-    zoom: 10,
+    zoom: 7,
     center: pos,
     mapTypeControl: true,
     disableDoubleClickZoom: true, 
@@ -57,7 +59,6 @@ function initialize() {
       }
     },
     onClick: function(view) {
-      //alert(view.label + view.checked);
       for(var i = 0; i < markers.length; i++) {
         if(markers[i].group != null 
         && markers[i].group.toString().trim() 
@@ -115,7 +116,7 @@ function initialize() {
     newRoute = !newRoute;
   });
 
-google.maps.event.addListener(autocomplete, 'place_changed', function() {
+  google.maps.event.addListener(autocomplete, 'place_changed', function() {
     var place = autocomplete.getPlace();
     makeMarker({
       lat: place.geometry.location.lat(),
@@ -130,7 +131,6 @@ google.maps.event.addListener(autocomplete, 'place_changed', function() {
     map.panTo(place.geometry.location);
     map.setZoom(15);
   });
-
   google.maps.event.addListener(map, 'dblclick', function(event) {
     makeMarker({
       lat: event.latLng.lat(),
@@ -144,27 +144,34 @@ google.maps.event.addListener(autocomplete, 'place_changed', function() {
     });
   });
   var group = $("#group").text();
+  var uname = -1;
+  if($("#user").text() != "Login") {
+    uname = $("#user").text().substring(3);
+  }
   $.ajax({
-      url: 'ajax/get_places.php',
-      data:{
-        group: group,
-      },
-      dataType:'json',
-      type:"POST",
-      success:function(data) {
-        if(data[0] == "success") {
-          for(var i = 1; i < data.length; i++){
-            makeMarker(data[i]);
-          }
+    url: 'ajax/get_places.php',
+    data:{
+      group: group,
+      uname: uname
+    },
+    dataType:'json',
+    type:"POST",
+    success:function(data) {
+      if(data.status == "success") {
+        map.panTo(new google.maps.LatLng(data.location.lat, data.location.lng));
+        map.setZoom(data.location.zoom * 1);
+        for(var i = 0; i < data.arr.length; i++){
+          makeMarker(data.arr[i]);
         }
-        else {
-          alert("get places failed");
-        }
-      },
-      error:function(xhr, status, errorThrown){
-        alert("error" + status + errorThrown);
       }
-    });
+      else {
+        alert("get places failed");
+      }
+    },
+    error:function(xhr, status, errorThrown){
+      alert("error" + status + errorThrown);
+    }
+  });
 }
 function loadScript() {
   var script = document.createElement('script');
@@ -174,9 +181,12 @@ function loadScript() {
   document.body.appendChild(script);
 }
 function update() {
-
   var group = $("#group").text();
   var out = [];
+  var uname = null;
+  if($("#user").text().trim() != "Login") {
+    uname = $("#user").text().substring(3);
+  }
   for(var i = 0; i < markers.length; i++) {
     var marker = markers[i];
     out[i] = {
@@ -199,7 +209,11 @@ function update() {
     $.ajax({
       url: 'ajax/save_place.php',
       data: {
-      array: out
+      array: out,
+      lat: map.getCenter().lat(),
+      lng: map.getCenter().lng(),
+      zoom: map.getZoom(),
+      uname: uname
       },
       dataType:'json',
       type:"POST",
@@ -249,7 +263,8 @@ function getAdd(marker) {
     if (status == google.maps.GeocoderStatus.OK) {
       if (results[0]) {
         marker.add = results[0].formatted_address;
-      } else {
+      } 
+      else {
         window.alert('No results found');
       }
     } 
@@ -269,58 +284,57 @@ function content(marker, infoWindow) {
  }
 function makeMarker(data) {
   var marker = new google.maps.Marker({
-      position: new google.maps.LatLng(data["lat"], data["lng"]),
-      map: map,
-      title: data["position"].toString(),
-      draggable: false,
-      number: data["position"],
-      h1: data["name"],
-      add: data["address"],
-      ID: data["ID"],    
-      visited: false,
-      group: data["sub_group"],
-      del: false
-    });
-    markers.push(marker);
-    if(data["position"] > num) {
-      num = data["position"];  
-    }
-    if(marker.add == "") {
-        getAdd(marker);
-    }
-    var infoWindow = new google.maps.InfoWindow({});
-    google.maps.event.addListener(infoWindow, 'domready', function() {
-      $('input[type="button"][value="edit"]').click(function() {
-        $(this).siblings("h1").text(
-          $(this).siblings("input[type='text']").val());
-        marker.h1 = $(this).siblings("input[type='text']").val();
-      });
-      $('input[type="button"][value="delete"]').click(function() {
-        marker.setMap(null);
-        marker.del = true;
-      });
-      $('input[type="button"][value="move"]').click(function() {
-        marker.setDraggable(true);
-      });
-      $('input[type="button"][value="visit"]').click(function() {
-        $('input[type="button"][value="visit"]').attr("value", "unvisit");
-        marker.visited = ! marker.visited;
-      });
-      
-    });
-    google.maps.event.addListener(marker, 'click', function(event) {
-      content(marker, infoWindow);
-      if(!add) {
-        infoWindow.open(map, marker);
-      }
-      else {
-        marker.group = route;
-      }
-    });
-    google.maps.event.addListener(marker, 'dragend', function(event) {
-      marker.setDraggable(false);
+    position: new google.maps.LatLng(data["lat"], data["lng"]),
+    map: map,
+    title: data["position"].toString(),
+    draggable: false,
+    number: data["position"],
+    h1: data["name"],
+    add: data["address"],
+    ID: data["ID"],    
+    visited: false,
+    group: data["sub_group"],
+    del: false
+  });
+  markers.push(marker);
+  if(data["position"] > num) {
+    num = data["position"];  
+  }
+  if(marker.add == "") {
       getAdd(marker);
-      content(marker, infoWindow);
-      });      
+  }
+  var infoWindow = new google.maps.InfoWindow({});
+  google.maps.event.addListener(infoWindow, 'domready', function() {
+    $('input[type="button"][value="edit"]').click(function() {
+      $(this).siblings("h1").text(
+        $(this).siblings("input[type='text']").val());
+      marker.h1 = $(this).siblings("input[type='text']").val();
+    });
+    $('input[type="button"][value="delete"]').click(function() {
+      marker.setMap(null);
+      marker.del = true;
+    });
+    $('input[type="button"][value="move"]').click(function() {
+      marker.setDraggable(true);
+    });
+    $('input[type="button"][value="visit"]').click(function() {
+      $('input[type="button"][value="visit"]').attr("value", "unvisit");
+      marker.visited = ! marker.visited;
+    });   
+  });
+  google.maps.event.addListener(marker, 'click', function(event) {
+    content(marker, infoWindow);
+    if(!add) {
+      infoWindow.open(map, marker);
+    }
+    else {
+      marker.group = route;
+    }
+  });
+  google.maps.event.addListener(marker, 'dragend', function(event) {
+    marker.setDraggable(false);
+    getAdd(marker);
+    content(marker, infoWindow);
+  });      
 }
 window.onload = loadScript;

@@ -2,6 +2,22 @@
 require_once("../../php/db_util.php");
 $out = array();
 $i = 0;
+if(isset($_POST["uname"])){
+	$uname= escape($_POST["uname"]);
+	$conn = login();
+	$lat = escape($_POST["lat"]);
+	$lng = escape($_POST["lng"]);
+	$zoom = escape($_POST["zoom"]);
+	$result = $conn->query("UPDATE user SET
+		lat='$lat',
+		lng='$lng',
+		zoom='$zoom' 
+		WHERE username='$uname'
+		");
+}
+if(!isset($_POST["array"])) {
+	$_POST["array"] = [];
+}
 foreach($_POST["array"] as $marker) {
 	if(!isset($marker['id'])) {
 		$id = -1;

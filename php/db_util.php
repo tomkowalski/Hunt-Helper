@@ -27,9 +27,9 @@
 		else {
 			$row = $result->fetch_assoc();
 			$out = $row[$key];	
+			$result->close();
 		}
 		$conn->close();
-		$result->close();
 		return $out;
 	}
 	

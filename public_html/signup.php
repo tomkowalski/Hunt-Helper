@@ -69,6 +69,9 @@ __HTML;
 		$id = null;
 		$g = null;
 		$sg = null;
+		$lat = 38.3941;
+		$lng = -97.0167;
+		$zoom = 4;
 		$out = "";
 		$result = getOne("SELECT * FROM user WHERE username='$u'", 'username');
 		if($result != "No Results" && $result != "") {
@@ -85,8 +88,8 @@ __HTML;
 		if($out == "") {
 			//require_once('../php/db_util.php');
 			$conn = login();
-			$in = $conn->prepare('INSERT INTO user VALUES(?, ?, ?, ?, ?, ?, ?, ?)');
-			$in->bind_param("sssssiii", $f, $l, $u, $hash, $e, $g, $sg, $id);
+			$in = $conn->prepare('INSERT INTO user VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+			$in->bind_param("sssssiiiddi", $f, $l, $u, $hash, $e, $g, $sg, $id, $lat, $lng, $zoom);
 			$in->execute();
 			$out = $in->affected_rows;
 			$in->close();

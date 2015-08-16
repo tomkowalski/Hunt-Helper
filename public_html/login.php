@@ -8,7 +8,7 @@ if(isset($_SESSION["ID"])) {
 	if(isset($_POST['set'])) {
 		session_unset();
 		session_destroy();
-		$body = "Logged out";
+		$body = "<h1>Logged out</h1>";
 	}
 	else {
 		$body = <<<__HTML

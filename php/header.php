@@ -54,7 +54,7 @@ __HTML;
 						<li id='group'>$group</li>
 						<li><a href='location.php'>Location</a></li>
 						<li>My Route</l1>
-						<li><a href="$path/login.php">My $name</a></li>
+						<li id='user'><a href="$path/login.php">My $name</a></li>
 					</ul>
 				</nav>
 __HTML;
@@ -67,7 +67,7 @@ __HTML;
 					<ul>
 						<li><a href="$path/index.php">Map</a></li>
 						<li><a href='location.php'>Location</a></li>
-						<li><a href="$path/login.php">Login</a>
+						<li id='user'><a href="$path/login.php">Login</a>
  </l1>
 					</ul>
 				</nav>
