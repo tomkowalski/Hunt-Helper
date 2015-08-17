@@ -1,13 +1,13 @@
 <?php
 require_once("../../php/db_util.php");
-$group = escape($_POST['group']);
-$usern = escape($_POST['uname']);
-$groupID = getOne("SELECT ID from userGroup WHERE name='$group'",'ID');
+session_start();
+$id= $_SESSION['ID'];
+$groupID = getOne("SELECT * from user WHERE ID='$id'",'group_key');
 $out = array();
-if(isset($_POST['uname']) && $usern != "in") {
-	$out["location"]["lat"] = getOne("SELECT * from user WHERE username='$usern'",'lat');
-	$out["location"]["lng"] = getOne("SELECT * from user WHERE username='$usern'",'lng');
-	$out["location"]["zoom"] = getOne("SELECT * from user WHERE username='$usern'",'zoom');
+if(isset($_SESSION["ID"])) {
+	$out["location"]["lat"] = getOne("SELECT * from user WHERE ID='$id'",'lat');
+	$out["location"]["lng"] = getOne("SELECT * from user WHERE ID='$id'",'lng');
+	$out["location"]["zoom"] = getOne("SELECT * from user WHERE ID='$id'",'zoom');
 }
 if($out["location"]["lat"] == "No Results" || !isset($out["location"]["lat"])) {
 	$out["location"]["lat"] = 38.3941;

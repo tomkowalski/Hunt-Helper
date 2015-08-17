@@ -139,7 +139,7 @@ function initialize() {
       name: "Location",
       address: "",
       ID: -1,    
-      sub_group: 0,
+      sub_group: null,
       group_key: null
     });
   });

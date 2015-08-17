@@ -89,7 +89,7 @@ __HTML;
 			//require_once('../php/db_util.php');
 			$conn = login();
 			$in = $conn->prepare('INSERT INTO user VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
-			$in->bind_param("sssssiiiddi", $f, $l, $u, $hash, $e, $g, $sg, $id, $lat, $lng, $zoom);
+			$in->bind_param("sssssiiiddi", $f, $l, $u, $hash, $e, $g, $sg, $lat, $lng, $zoom, $id);
 			$in->execute();
 			$out = $in->affected_rows;
 			$in->close();

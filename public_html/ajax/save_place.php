@@ -2,8 +2,9 @@
 require_once("../../php/db_util.php");
 $out = array();
 $i = 0;
+session_start();
 if(isset($_POST["uname"])){
-	$uname= escape($_POST["uname"]);
+	$id= $_SESSION['ID'];
 	$conn = login();
 	$lat = escape($_POST["lat"]);
 	$lng = escape($_POST["lng"]);
@@ -12,7 +13,7 @@ if(isset($_POST["uname"])){
 		lat='$lat',
 		lng='$lng',
 		zoom='$zoom' 
-		WHERE username='$uname'
+		WHERE ID='$id'
 		");
 }
 if(!isset($_POST["array"])) {
