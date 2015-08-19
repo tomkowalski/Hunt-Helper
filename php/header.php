@@ -26,7 +26,7 @@ __HTML;
 		}	
 		if($page == "Location") {
 			$out .= <<<__HTML
-			<script type="text/javascript" src="$path/js/save_places.js"></script>
+		<script type="text/javascript" src="$path/js/save_places.js"></script>
 __HTML;
 		}
 		$out .= "<style>

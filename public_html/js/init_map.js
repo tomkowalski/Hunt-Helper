@@ -53,7 +53,7 @@ function initialize() {
     },
     onUncheckAll: function() {
       for(var i = 0; i < markers.length; i++) {
-        if(markers[i].group != null && markers[i].group != 0) {
+        if(markers[i].group != null) {
           markers[i].setMap(null);
         }
       }
