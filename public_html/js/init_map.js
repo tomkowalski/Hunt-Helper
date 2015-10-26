@@ -149,18 +149,10 @@ function initialize() {
       group_key: null
     });
   });
-  var group = $("#group").text();
-  var uname = -1;
-  if($("#user").text() != "Login") {
-    uname = $("#user").text().substring(3);
-  }
-  //ajax call for getting inital plaes if user is signed in (Further checks are done in the server)
+  //ajax call for getting inital places if user is signed in.
   $.ajax({
     url: 'ajax/get_places.php',
-    data:{
-      group: group,
-      uname: uname
-    },
+    data:{},
     dataType:'json',
     type:"POST",
     success:function(data) {
@@ -191,11 +183,7 @@ function loadScript() {
 function update() {
   var group = $("#group").text();
   var out = [];
-  var uname = null;
-  if($("#user").text().trim() != "Login") {
-    uname = $("#user").text().substring(3);
-  }
-  //structures data
+  //structures data to proper form
   for(var i = 0; i < markers.length; i++) {
     var marker = markers[i];
     out[i] = {
@@ -222,7 +210,6 @@ function update() {
       lat: map.getCenter().lat(),
       lng: map.getCenter().lng(),
       zoom: map.getZoom(),
-      uname: uname
       },
       dataType:'json',
       type:"POST",

@@ -14,18 +14,19 @@ if(isset($_SESSION["ID"])) {
 	while($row = $result->fetch_assoc()) {
 		if($first) {
 				$first = false;
-				$body .= "<h2>No Route</h2> <ul>";	
+				$body .= "<h2>No Route</h2> <dl>";	
 		}
 		if($last_route != $row["sub_group"]) {
 			$last_route = $row["sub_group"];
 			if($first) {
 				$first = false;	
 			}
-			$body .= "</ul><h2>$last_route</h2> <ul>";
+			$body .= "</dl><h2>$last_route</h2> <dl>";
 		}
 		$name = $row["name"];
 		$add = $row["address"];
-		$body .= "<li>$name : $add</li>";
+		$id = $row["ID"];
+		$body .= "<dt id=$id>$name</dt><dd>$add</dd><dd><input type='button' value='edit'></dd>";
 	}
 }
 else {

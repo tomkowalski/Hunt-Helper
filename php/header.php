@@ -1,4 +1,6 @@
 <?php
+	//$path is to root of public_html directory 
+	//$page is the name of the page the header is for. 
 	function head($path, $page) {
 
 		$out = <<<__HTML
@@ -12,11 +14,11 @@
 					<link rel="stylesheet" type="text/css" href="$path/css/main.css">
 					<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
 __HTML;
-		$width = 30;
+		$width = 30; //changes width of menu options based on if a user is logged in.
 		if(isset($_SESSION["ID"])) {
 			$width = 17;
 		}
-		if($page == "Map")	{
+		if($page == "Map")	{ //scripts and css needed for Map page
 			$out .= <<<__HTML
 			<script type="text/javascript" src="$path/js/init_map.js"></script>
 			<link rel="stylesheet" href="$path/css/multiple-select.css"/>
@@ -24,7 +26,7 @@ __HTML;
 
 __HTML;
 		}	
-		if($page == "Location") {
+		if($page == "Location") { //Script and css needed for Location page
 			$out .= <<<__HTML
 		<script type="text/javascript" src="$path/js/save_places.js"></script>
 __HTML;
@@ -35,9 +37,10 @@ __HTML;
 				}
 			</style>
 			</head>";
-		$out .= nav($path, $page);
+		$out .= nav($path, $page); 
 		return $out;
 	}
+	//Creates a navigation bar based on if a user is signed in.
 	function nav($path, $page) {
 		$out = "";
 		if(isset($_SESSION["ID"])) {
@@ -60,7 +63,6 @@ __HTML;
 __HTML;
 		}
 		else {
-			//$_SESSION["set"] = false;
 			$out = <<<__HTML
 			<nav> 
 					<img src="$path/assets/logo(small).png">

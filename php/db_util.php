@@ -1,6 +1,6 @@
 <?php 
 	function login() {
-		require('secret.php');
+		require('secret.php'); //Conatins $hn, $un, $pw, $db
 		require('db_table_init.php');
 		$conn = new mysqli($hn, $un, $pw, $db);
 		if($conn->connect_error) {
@@ -17,8 +17,8 @@
 				die($conn->error);
 			}
 		}
-	} 
-	function getOne($query, $key) {
+	}
+	function getOne($query, $key) { //Allows for retriving a single emlement from $query based on $key.
 		$conn = login();
 		$result = $conn->query($query);
 		if(!$result) {

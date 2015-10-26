@@ -3,7 +3,8 @@ require_once("../../php/db_util.php");
 $out = array();
 $i = 0;
 session_start();
-if(isset($_POST["uname"])){
+//If user is signed in get info
+if(isset($_SESSION['ID'])){
 	$id= $_SESSION['ID'];
 	$conn = login();
 	$lat = escape($_POST["lat"]);
@@ -16,10 +17,13 @@ if(isset($_POST["uname"])){
 		WHERE ID='$id'
 		");
 }
+//To stop future null pointer problems
 if(!isset($_POST["array"])) {
 	$_POST["array"] = [];
 }
+//Update database based on array of markers.
 foreach($_POST["array"] as $marker) {
+	//If marker is already in array
 	if(!isset($marker['id'])) {
 		$id = -1;
 	}
@@ -40,6 +44,7 @@ foreach($_POST["array"] as $marker) {
 		//$groupID = -1;
 	}
 	$tempOut = array();
+	//Add new marker.
 	if($id <= 0) {
 		if($del == "true") {
 			$tempOut["status"] = "saved";
@@ -51,7 +56,7 @@ foreach($_POST["array"] as $marker) {
 	}
 	else {
 		$conn = login();
-		if($del == "true") {
+		if($del == "true") { //Delete marker from database
 			$result = $conn->query("DELETE FROM place WHERE ID='$id'");
 			if(!$result) {
 				$tempOut["status"] = "error";
@@ -62,7 +67,7 @@ foreach($_POST["array"] as $marker) {
 				$tempOut["del"] = "yes";
 			}
 		}
-		else {
+		else { //Update marker in database
 			$result = $conn->query("UPDATE place SET 
 				name='$title',
 				address='$add',
@@ -88,13 +93,14 @@ foreach($_POST["array"] as $marker) {
 }
 header("Content-Type: application/json", true);
 echo json_encode($out);
+//adds $marker to the database with a group id number of $groupID
 function prepCreate($groupID, $marker) {
 	$tempOut = array();
-	$num = escape($marker['number']);
-	$lat = escape($marker['lat']);
-	$lng =escape($marker['lng']);
-	$title = escape($marker['title']);
-	$add = escape($marker['address']);
+	$num = htmlspecialchars($marker['number']);
+	$lat = htmlspecialchars($marker['lat']);
+	$lng = htmlspecialchars($marker['lng']);
+	$title = htmlspecialchars($marker['title']);
+	$add = htmlspecialchars($marker['address']);
 	$subgroup = null;
 	$visited = 0;
 	$id = null;
@@ -119,6 +125,7 @@ function prepCreate($groupID, $marker) {
 	}
 	return $tempOut; 
 }
+//escape characters of $str
 function escape($str) {
 	$conn = login();
 	$str = $conn->real_escape_string($str);

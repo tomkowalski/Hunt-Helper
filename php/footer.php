@@ -1,4 +1,5 @@
 <?php
+	//$path is the path to the root of public_html directory
 	function foot($path) {
 		$out = "</html>";
 		$out .= <<<__HTML
