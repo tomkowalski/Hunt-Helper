@@ -1,16 +1,16 @@
 var num = 0;
-var map;
-var geocoder;
-var markers = [];
-var requestActive = false;
-var autocomplete;
-var newRoute = true;
-var add = false;
-var route = null;
-var subG = {};
-var pos;
+var map; //The Google Map Object
+var geocoder; //The Google Geocoder Object
+var markers = []; //Array of Markers in the current Map
+var requestActive = false; //Is there an Ajax request going on currently
+var autocomplete; //The Google Autocomplete object
+var newRoute = true; //Should a new route be made if the route button is clicked
+var add = false; //Should 
+var route = null; //What route should markers be added to.
+var subG = {}; //? 
+var pos; //Position of the page
 function initialize() {
-  pos = new google.maps.LatLng(38.8833, -77.0167);
+  pos = new google.maps.LatLng(38.8833, -77.0167); //Default location of the map
   /*if(navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(function(position) {
       pos = new google.maps.LatLng(position.coords.latitude,
@@ -21,7 +21,7 @@ function initialize() {
     
   var mapOptions = {
     zoom: 7,
-    center: pos,
+    center: pos, //
     mapTypeControl: true,
     disableDoubleClickZoom: true, 
     mapTypeControlOptions: {
@@ -32,6 +32,7 @@ function initialize() {
   geocoder = new google.maps.Geocoder();
   map = new google.maps.Map(document.getElementById('map-canvas'),
       mapOptions);
+  //Adds a route selection drop down menus and the listeners on them.
   $("nav").after('<input id="auto-c" class="controls" type="text" placeholder="Enter a location">'
     + '<div class="form">'
     + '<input id="save" type="button" value="Save Places">'
@@ -46,19 +47,21 @@ function initialize() {
     onClose: function() {
       $("#new_route").show();
     },
-    onCheckAll: function() {
+    onCheckAll: function() { //adds all unmapped markers who are not to be deleted onto the map
       for(var i = 0; i < markers.length; i++) {
-        markers[i].setMap(map);
+        if(markers[i].getMap() == null && ! markers[i].del) {
+          markers[i].setMap(map);
+        }
       }
     },
-    onUncheckAll: function() {
+    onUncheckAll: function() { //Removes all items that are part of a route.
       for(var i = 0; i < markers.length; i++) {
         if(markers[i].group != null) {
           markers[i].setMap(null);
         }
       }
     },
-    onClick: function(view) {
+    onClick: function(view) { //Sets maps of markers whose group visibility has chanegd.
       for(var i = 0; i < markers.length; i++) {
         if(markers[i].group != null 
         && markers[i].group.toString().trim() 
@@ -73,11 +76,12 @@ function initialize() {
       }
     },
   });
+  //Sets up the menu that allows for  routes to have markers added to them.
   $('#route_select').multipleSelect({
     placeholder: "Add To Route",
     single: true,
     position: 'top',
-    onClick: function(view) {
+    onClick: function(view) { //if a route is cicked updates the values of add and route to the correct values.
       if(view.label.trim() != "No Route") {
         add = true;
         route = view.label.trim();  
@@ -89,15 +93,16 @@ function initialize() {
       //alert(view.label + view.checked);
     }
   });
-  $("#route_view").multipleSelect("checkAll");
-  autocomplete = new google.maps.places.Autocomplete($('#auto-c').get(0));
+  $("#route_view").multipleSelect("checkAll"); //all routes are initally visible.
+  autocomplete = new google.maps.places.Autocomplete($('#auto-c').get(0)); //sets up autocomplete 
   autocomplete.bindTo('bounds', map);
+  //Align all contols to parts of the google map.
   map.controls[google.maps.ControlPosition.TOP_LEFT].push($('#auto-c').get(0));
   map.controls[google.maps.ControlPosition.BOTTOM_CENTER].push($('#save').get(0));
   map.controls[google.maps.ControlPosition.TOP_RIGHT].push($('.ms-parent:eq(0)').get(0));
   map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push($('.ms-parent:eq(1)').get(0));
   map.controls[google.maps.ControlPosition.RIGHT_TOP].push($('#new_route').get(0));
-  $("#new_route_button").click(function() {
+  $("#new_route_button").click(function() { //listener for New route button.
     if(newRoute) {
       $("#new_route").prepend("<input id='new_route_text' type='text' placeholder='Route Name'>");
       $("#new_route_button").attr("value","Create");
@@ -115,7 +120,7 @@ function initialize() {
     }
     newRoute = !newRoute;
   });
-
+  //Listener for autocomplete to add a marker based on a search
   google.maps.event.addListener(autocomplete, 'place_changed', function() {
     var place = autocomplete.getPlace();
     makeMarker({
@@ -131,6 +136,7 @@ function initialize() {
     map.panTo(place.geometry.location);
     map.setZoom(15);
   });
+  //Listener for map that adds a marker when the map is double clicked.
   google.maps.event.addListener(map, 'dblclick', function(event) {
     makeMarker({
       lat: event.latLng.lat(),
@@ -148,6 +154,7 @@ function initialize() {
   if($("#user").text() != "Login") {
     uname = $("#user").text().substring(3);
   }
+  //ajax call for getting inital plaes if user is signed in (Further checks are done in the server)
   $.ajax({
     url: 'ajax/get_places.php',
     data:{
@@ -180,6 +187,7 @@ function loadScript() {
       '&signed_in=false&callback=initialize';
   document.body.appendChild(script);
 }
+//Save Markers ajax call.
 function update() {
   var group = $("#group").text();
   var out = [];
@@ -187,6 +195,7 @@ function update() {
   if($("#user").text().trim() != "Login") {
     uname = $("#user").text().substring(3);
   }
+  //structures data
   for(var i = 0; i < markers.length; i++) {
     var marker = markers[i];
     out[i] = {
@@ -258,6 +267,7 @@ function update() {
     requestActive = false;      
   }
 }
+//adds address from geocoder for the given marker.
 function getAdd(marker) {
   geocoder.geocode({'location': marker.getPosition()}, function(results, status) {
     if (status == google.maps.GeocoderStatus.OK) {
@@ -273,6 +283,7 @@ function getAdd(marker) {
     }
   });     
 }
+//Adds content to the infowindow of the given marker.
 function content(marker, infoWindow) {
   infoWindow.setContent("<div class='info_window'><h1>" + marker.h1 + "</h1><p>" + marker.add +               
         "</p> Change name:<input type='text'>\
@@ -282,6 +293,7 @@ function content(marker, infoWindow) {
                           <input type='button' value='visit'></div>");
      
  }
+ //Creates a marker from the given data
 function makeMarker(data) {
   var marker = new google.maps.Marker({
     position: new google.maps.LatLng(data["lat"], data["lng"]),
