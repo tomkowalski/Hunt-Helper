@@ -11,6 +11,7 @@
     				<meta charset="utf-8">
     				<title>Husky Hunt Helper: $page</title>
 					<link href='http://fonts.googleapis.com/css?family=Arimo:400,700,700italic,400italic|Droid+Sans:400,700' rel='stylesheet' type='text/css'>
+					<link rel="icon" href="http://www.huskyhunthelper.com/favicon.ico" type="image/x-icon"> 
 					<link rel="stylesheet" type="text/css" href="$path/css/main.css">
 					<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
 __HTML;
