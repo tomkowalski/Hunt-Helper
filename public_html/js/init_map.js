@@ -19,7 +19,7 @@ function initialize() {
     });
   }*/
 
-    
+  //Initalize map options
   var mapOptions = {
     zoom: 7,
     center: pos, //
@@ -111,6 +111,7 @@ function initialize() {
   map.controls[google.maps.ControlPosition.TOP_RIGHT].push($('.ms-parent:eq(0)').get(0));
   map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push($('.ms-parent:eq(1)').get(0));
   map.controls[google.maps.ControlPosition.RIGHT_TOP].push($('#new_route').get(0));
+  //Toggles map of visited markers when button is clicked.
   $("#show_visited_button").click(function() {
     var tempmap = null;
     if(!visit_visible) {
@@ -123,7 +124,8 @@ function initialize() {
     }
     visit_visible = !visit_visible;
   });
-  $("#new_route_button").click(function() { //listener for New route button.
+   //listener for New route button.
+  $("#new_route_button").click(function() {
     if(newRoute) {
       $("#new_route").prepend("<input id='new_route_text' type='text' placeholder='Route Name'>");
       $("#new_route_button").attr("value","Create");
@@ -208,6 +210,7 @@ function update() {
   //structures data to proper form
   for(var i = 0; i < markers.length; i++) {
     var marker = markers[i];
+    //changes boolean to int for database.
     var tempVisit = 0;
     if(marker.visited) {
       tempVisit = 1;
