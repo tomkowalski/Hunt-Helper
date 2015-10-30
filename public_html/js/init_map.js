@@ -8,6 +8,7 @@ var newRoute = true; //Should a new route be made if the route button is clicked
 var add = false; //Should 
 var route = null; //What route should markers be added to.
 var subG = {}; //? 
+var visit_visible = false;
 var pos; //Position of the page
 function initialize() {
   pos = new google.maps.LatLng(38.8833, -77.0167); //Default location of the map
@@ -32,13 +33,19 @@ function initialize() {
   geocoder = new google.maps.Geocoder();
   map = new google.maps.Map(document.getElementById('map-canvas'),
       mapOptions);
-  //Adds a route selection drop down menus and the listeners on them.
+  //Adds buttons for route manipulation as well as routes. 
   $("nav").after('<input id="auto-c" class="controls" type="text" placeholder="Enter a location">'
     + '<div class="form">'
     + '<input id="save" type="button" value="Save Places">'
     + '</div>'
-    + '<div id="new_route"><input id="new_route_button" type="button" value="New Route"></div>');
+    + '<div id="new_route">'
+    + '<input id="new_route_button" type="button" value="New Route">'
+    + '</div>'
+    + '<div id="show_visited">'
+    + '<input id="show_visited_button" type="button" value="Toggle Visited Visibility">'
+    + '</div>');
    $("#save").click(update);
+   //Adds a route selection drop down menus and the listeners on them.
    $('#route_view').multipleSelect({
     placeholder: "Select Routes",
     onOpen: function() {
@@ -96,12 +103,26 @@ function initialize() {
   $("#route_view").multipleSelect("checkAll"); //all routes are initally visible.
   autocomplete = new google.maps.places.Autocomplete($('#auto-c').get(0)); //sets up autocomplete 
   autocomplete.bindTo('bounds', map);
+
   //Align all contols to parts of the google map.
   map.controls[google.maps.ControlPosition.TOP_LEFT].push($('#auto-c').get(0));
+  map.controls[google.maps.ControlPosition.LEFT_TOP].push($('#show_visited').get(0));
   map.controls[google.maps.ControlPosition.BOTTOM_CENTER].push($('#save').get(0));
   map.controls[google.maps.ControlPosition.TOP_RIGHT].push($('.ms-parent:eq(0)').get(0));
   map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push($('.ms-parent:eq(1)').get(0));
   map.controls[google.maps.ControlPosition.RIGHT_TOP].push($('#new_route').get(0));
+  $("#show_visited_button").click(function() {
+    var tempmap = null;
+    if(!visit_visible) {
+      tempmap = map; 
+    }
+    for(var i = 0; i < markers.length; i++) {
+      if(markers[i].visited) {
+        markers[i].setMap(tempmap);
+      }
+    }
+    visit_visible = !visit_visible;
+  });
   $("#new_route_button").click(function() { //listener for New route button.
     if(newRoute) {
       $("#new_route").prepend("<input id='new_route_text' type='text' placeholder='Route Name'>");
@@ -116,7 +137,7 @@ function initialize() {
       get_sel.push($("#new_route_text").val());
       $("#route_view").multipleSelect('setSelects', get_sel);
       $("#new_route_text").remove();
-      $("#new_route_button").attr("value","Change Route");
+      $("#new_route_button").attr("value","New Route");
     }
     newRoute = !newRoute;
   });
@@ -146,7 +167,8 @@ function initialize() {
       address: "",
       ID: -1,    
       sub_group: null,
-      group_key: null
+      group_key: null,
+      visited: false
     });
   });
   //ajax call for getting inital places if user is signed in.
@@ -186,6 +208,10 @@ function update() {
   //structures data to proper form
   for(var i = 0; i < markers.length; i++) {
     var marker = markers[i];
+    var tempVisit = 0;
+    if(marker.visited) {
+      tempVisit = 1;
+    }
     out[i] = {
       id: marker.ID,
       number: marker.number,
@@ -195,7 +221,7 @@ function update() {
       address: marker.add,
       group: group,
       subgroup: marker.group,
-      visited: marker.visited,
+      visited: tempVisit,
       del: marker.del
     };
   }
@@ -277,14 +303,14 @@ function content(marker, infoWindow) {
                           <input type='button' value='edit'><br>\
                           <input type='button' value='delete'>\
                           <input type='button' value='move'>\
-                          <input type='button' value='visit'></div>");
+                          <input type='button' name='visit' value='visit'></div>");
      
  }
  //Creates a marker from the given data
 function makeMarker(data) {
   var marker = new google.maps.Marker({
     position: new google.maps.LatLng(data["lat"], data["lng"]),
-    map: map,
+    map: null,
     title: data["position"].toString(),
     draggable: false,
     number: data["position"],
@@ -296,12 +322,20 @@ function makeMarker(data) {
     del: false
   });
   markers.push(marker);
+  if(data["visited"] == 1) {
+    marker.visited = true;
+  }
+  else {
+    marker.setMap(map);
+  }
+
   if(data["position"] > num) {
     num = data["position"];  
   }
   if(marker.add == "") {
       getAdd(marker);
   }
+  //InfoWindow setup
   var infoWindow = new google.maps.InfoWindow({});
   google.maps.event.addListener(infoWindow, 'domready', function() {
     $('input[type="button"][value="edit"]').click(function() {
@@ -316,8 +350,16 @@ function makeMarker(data) {
     $('input[type="button"][value="move"]').click(function() {
       marker.setDraggable(true);
     });
-    $('input[type="button"][value="visit"]').click(function() {
-      $('input[type="button"][value="visit"]').attr("value", "unvisit");
+    $('input[type="button"][name="visit"]').click(function() {
+      if(marker.visited) {
+        $('input[type="button"][name="visit"]').attr("value", "visit");
+      }
+      else {
+        $('input[type="button"][name="visit"]').attr("value", "unvisit");
+        if(!visit_visible) {
+          marker.setMap(null);
+        }        
+      }
       marker.visited = ! marker.visited;
     });   
   });

@@ -102,7 +102,7 @@ function prepCreate($groupID, $marker) {
 	$title = htmlspecialchars($marker['title']);
 	$add = htmlspecialchars($marker['address']);
 	$subgroup = null;
-	$visited = 0;
+	$visited = htmlspecialchars($marker['visited']);
 	$id = null;
 	//require_once('../php/db_util.php');
 	$conn = login();
