@@ -102,13 +102,13 @@ echo json_encode($out);
 //adds $marker to the database with a group id number of $groupID
 function prepCreate($groupID, $marker) {
 	$tempOut = array();
-	$num = htmlspecialchars($marker['number']);
-	$lat = htmlspecialchars($marker['lat']);
-	$lng = htmlspecialchars($marker['lng']);
-	$title = htmlspecialchars($marker['title']);
-	$add = htmlspecialchars($marker['address']);
+	$num = htmlspecialchars_decode($marker['number']);
+	$lat = htmlspecialchars_decode($marker['lat']);
+	$lng = htmlspecialchars_decode($marker['lng']);
+	$title = htmlspecialchars_decode($marker['title']);
+	$add = htmlspecialchars_decode($marker['address']);
 	$subgroup = null;
-	$visited = htmlspecialchars($marker['visited']);
+	$visited = htmlspecialchars_decode($marker['visited']);
 	$id = null;
 	//require_once('../php/db_util.php');
 	$conn = login();
@@ -135,6 +135,6 @@ function prepCreate($groupID, $marker) {
 function escape($str) {
 	$conn = login();
 	$str = $conn->real_escape_string($str);
-	return htmlspecialchars($str);
+	return htmlspecialchars_decode($str);
 }
 ?>

@@ -27,16 +27,18 @@ else {
 	$out["arr"] = [];
 	$index = 0;
 	while($row = $result->fetch_assoc()) {
-		$out["arr"][$index] = $row;
+		$out["arr"][$index] = escape($row);
 		$index += 1;
 	}
 }
 $conn->close();
 header("Content-Type: application/json", true);
 echo json_encode($out);
-function escape($str) {
-	$conn = login();
-	$str = $conn->real_escape_string($str);
-	return htmlspecialchars($str);
+function escape($row) {
+	$fout = [];
+	foreach($row as $key => $val) {
+		$fout[$key] = htmlspecialchars($val);
+	}
+	return $fout;
 }
 ?>
