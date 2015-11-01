@@ -4,7 +4,8 @@ $out = array();
 $i = 0;
 session_start();
 //If user is signed in get info
-if(isset($_SESSION['ID'])){
+if(isset($_SESSION['ID']) && $_SESSION['ID'] > 0){
+	$out["Test"] = "wtf";
 	$id= $_SESSION['ID'];
 	$conn = login();
 	$lat = escape($_POST["lat"]);
@@ -16,6 +17,10 @@ if(isset($_SESSION['ID'])){
 		zoom='$zoom' 
 		WHERE ID='$id'
 		");
+}
+else {
+	$out["status"] = "Error";
+	$out["error"] = "Please Sign in or Login to save";
 }
 //To stop future null pointer problems
 if(!isset($_POST["array"])) {
@@ -93,6 +98,7 @@ foreach($_POST["array"] as $marker) {
 }
 header("Content-Type: application/json", true);
 echo json_encode($out);
+
 //adds $marker to the database with a group id number of $groupID
 function prepCreate($groupID, $marker) {
 	$tempOut = array();

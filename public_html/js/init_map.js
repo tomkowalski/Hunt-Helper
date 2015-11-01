@@ -154,13 +154,14 @@ function initialize() {
       address: place.formatted_address,
       ID: -1,    
       sub_group: null,
-      group_key: null
+      group_key: null,
+      edited: true
     });
     map.panTo(place.geometry.location);
     map.setZoom(15);
   });
   //Listener for map that adds a marker when the map is double clicked.
-  google.maps.event.addListener(map, 'dblclick', function(event) {
+  google.maps.event.addListener(map, 'dblclick', function(event) { //TODO ABSTRACT
     makeMarker({
       lat: event.latLng.lat(),
       lng: event.latLng.lng(),
@@ -170,7 +171,8 @@ function initialize() {
       ID: -1,    
       sub_group: null,
       group_key: null,
-      visited: false
+      visited: false,
+      edited: true
     });
   });
   //ajax call for getting inital places if user is signed in.
@@ -208,6 +210,7 @@ function update() {
   var group = $("#group").text();
   var out = [];
   //structures data to proper form
+  var count = 0;
   for(var i = 0; i < markers.length; i++) {
     var marker = markers[i];
     //changes boolean to int for database.
@@ -215,19 +218,24 @@ function update() {
     if(marker.visited) {
       tempVisit = 1;
     }
-    out[i] = {
-      id: marker.ID,
-      number: marker.number,
-      lat: marker.getPosition().lat(),
-      lng: marker.getPosition().lng(),
-      title: marker.h1,
-      address: marker.add,
-      group: group,
-      subgroup: marker.group,
-      visited: tempVisit,
-      del: marker.del
-    };
+    //Adds marker to be updated only if it has been updated.
+    if(marker.edited) {
+      out[count] = {
+        id: marker.ID,
+        number: marker.number,
+        lat: marker.getPosition().lat(),
+        lng: marker.getPosition().lng(),
+        title: marker.h1,
+        address: marker.add,
+        group: group,
+        subgroup: marker.group,
+        visited: tempVisit,
+        del: marker.del
+      };
+      count++;
+    }
   }
+  //If a request isnt already in progress try and do an ajax call.
   if(!requestActive) {
     requestActive = true;
     var status = "Saved";
@@ -265,6 +273,10 @@ function update() {
             } 
           }
         }
+        if(data.status == "Error") {
+          status = "Error";
+          error = data.error;
+        }
         if(status == "Error") {
           alert(error);
         }
@@ -278,8 +290,15 @@ function update() {
           }
         }
         $("#save").attr("value", status);
+       
+        
+
       }
     });
+    setTimeout( function() {
+      $("#save").attr("value", "Save");  
+      }, 
+      5000);
     requestActive = false;      
   }
 }
@@ -301,12 +320,22 @@ function getAdd(marker) {
 }
 //Adds content to the infowindow of the given marker.
 function content(marker, infoWindow) {
-  infoWindow.setContent("<div class='info_window'><h1>" + marker.h1 + "</h1><p>" + marker.add +               
+  if(marker.visited) {
+    infoWindow.setContent("<div class='info_window'><h1>" + marker.h1 + "</h1><p>" + marker.add +               
+        "</p> Change name:<input type='text'>\
+                          <input type='button' value='edit'><br>\
+                          <input type='button' value='delete'>\
+                          <input type='button' value='move'>\
+                          <input type='button' name='visit' value='unvisit'></div>");
+  }
+  else {
+    infoWindow.setContent("<div class='info_window'><h1>" + marker.h1 + "</h1><p>" + marker.add +               
         "</p> Change name:<input type='text'>\
                           <input type='button' value='edit'><br>\
                           <input type='button' value='delete'>\
                           <input type='button' value='move'>\
                           <input type='button' name='visit' value='visit'></div>");
+  }
      
  }
  //Creates a marker from the given data
@@ -322,7 +351,8 @@ function makeMarker(data) {
     ID: data["ID"],    
     visited: false,
     group: data["sub_group"],
-    del: false
+    del: false,
+    edited: data["edited"]
   });
   markers.push(marker);
   if(data["visited"] == 1) {
@@ -332,7 +362,7 @@ function makeMarker(data) {
     marker.setMap(map);
   }
 
-  if(data["position"] > num) {
+  if(data["position"] > num) { //TODO
     num = data["position"];  
   }
   if(marker.add == "") {
@@ -345,15 +375,18 @@ function makeMarker(data) {
       $(this).siblings("h1").text(
         $(this).siblings("input[type='text']").val());
       marker.h1 = $(this).siblings("input[type='text']").val();
+      marker.edited = true;
     });
     $('input[type="button"][value="delete"]').click(function() {
       marker.setMap(null);
       marker.del = true;
+      marker.edited = true;
     });
     $('input[type="button"][value="move"]').click(function() {
       marker.setDraggable(true);
     });
     $('input[type="button"][name="visit"]').click(function() {
+      marker.edited = true;
       if(marker.visited) {
         $('input[type="button"][name="visit"]').attr("value", "visit");
       }
@@ -376,6 +409,7 @@ function makeMarker(data) {
     }
   });
   google.maps.event.addListener(marker, 'dragend', function(event) {
+    marker.edited = true;
     marker.setDraggable(false);
     getAdd(marker);
     content(marker, infoWindow);

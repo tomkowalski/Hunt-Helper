@@ -1,21 +1,23 @@
 <?php
 require_once("../../php/db_util.php");
 session_start();
+$out = array();
+if(isset($_SESSION['ID'])) {
 $id= $_SESSION['ID'];
 $groupID = getOne("SELECT * from user WHERE ID='$id'",'group_key');
-$out = array();
-if(isset($_SESSION["ID"])) {
-	$out["location"]["lat"] = getOne("SELECT * from user WHERE ID='$id'",'lat');
+$out["location"]["lat"] = getOne("SELECT * from user WHERE ID='$id'",'lat');
 	$out["location"]["lng"] = getOne("SELECT * from user WHERE ID='$id'",'lng');
 	$out["location"]["zoom"] = getOne("SELECT * from user WHERE ID='$id'",'zoom');
 }
-if($out["location"]["lat"] == "No Results" || !isset($out["location"]["lat"])) {
+if(!isset($out["location"]["lat"]) || $out["location"]["lat"] == "No Results") {
 	$out["location"]["lat"] = 38.3941;
 	$out["location"]["lng"] = -97.0167;
 	$out["location"]["zoom"] = 4;
 }
-
 $conn = login();
+if(!isset($groupID)) {
+	$groupID = -1;
+}
 $result = $conn->query("SELECT * FROM place WHERE group_key='$groupID'");
 if(!$result) {
 	$out["status"][0] = "error";
