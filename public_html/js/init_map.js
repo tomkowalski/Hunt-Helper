@@ -6,7 +6,7 @@ var autocomplete; //The Google Autocomplete object
 var newRoute = true; //Should a new route be made if the route button is clicked
 var add = false; //Should 
 var route = null; //What route should markers be added to.
-var subG = {}; // "associative array" of subgroup last values
+var subG = []; // "associative array" of subgroup last values
 var visit_visible = false;
 var pos; //Position of the page
 function initialize() {
@@ -55,14 +55,17 @@ function initialize() {
     },
     onCheckAll: function() { //adds all unmapped markers who are not to be deleted onto the map
       for(var i = 0; i < markers.length; i++) {
-        if(markers[i].getMap() == null && ! markers[i].del) {
+        if(markers[i].getMap() == null 
+       && !markers[i].del 
+       && !markers[i].visited) {
           markers[i].setMap(map);
         }
       }
     },
     onUncheckAll: function() { //Removes all items that are part of a route.
       for(var i = 0; i < markers.length; i++) {
-        if(markers[i].group != null) {
+        if(markers[i].group != null 
+        && markers[i].group != "") {
           markers[i].setMap(null);
         }
       }
@@ -73,7 +76,9 @@ function initialize() {
         && markers[i].group.toString().trim() 
         == view.label.trim()) {
           if(view.checked) {
-            markers[i].setMap(map);
+            if(!markers[i].visited) {
+              markers[i].setMap(map);
+            }
           }
           else {
             markers[i].setMap(null);
@@ -123,7 +128,7 @@ function initialize() {
     }
     visit_visible = !visit_visible;
   });
-   //listener for New route button.
+   //listener for New route button which adds new route to multiple select menus
   $("#new_route_button").click(function() {
     if(newRoute) {
       $("#new_route").prepend("<input id='new_route_text' type='text' placeholder='Route Name'>");
@@ -175,13 +180,14 @@ function initialize() {
       edited: true
     });
   });
-  //ajax call for getting inital places if user is signed in.
+  //ajax call for getting inital places and location on screen if user is signed in.
   $.ajax({
     url: 'ajax/get_places.php',
     data:{},
     dataType:'json',
     type:"POST",
     success:function(data) {
+      //move screen to previous saved location
       if(data.status == "success") {
         map.panTo(new google.maps.LatLng(data.location.lat, data.location.lng));
         map.setZoom(data.location.zoom * 1);
@@ -198,6 +204,7 @@ function initialize() {
     }
   });
 }
+//Adds map script elements to page.
 function loadScript() {
   var script = document.createElement('script');
   script.type = 'text/javascript';
@@ -207,8 +214,8 @@ function loadScript() {
 }
 //Save Markers ajax call.
 function update() {
-  var group = $("#group").text();
-  var out = [];
+  var out = []; //data out;
+  var markOut = []; //markers whose data is going out.
   //structures data to proper form
   var count = 0;
   for(var i = 0; i < markers.length; i++) {
@@ -227,11 +234,11 @@ function update() {
         lng: marker.getPosition().lng(),
         title: marker.h1,
         address: marker.add,
-        group: group,
         subgroup: marker.group,
         visited: tempVisit,
         del: marker.del
       };
+      markOut[count] = marker;
       count++;
     }
   }
@@ -262,11 +269,15 @@ function update() {
             status = "Error";
           }
           else {
-            var marker = markers[i];
+            var marker = markOut[i];
+            //takes away marker edited flag.
+            marker.edited = false;
+            //deleted marker from markers if sucessfully deleted.
             if(data[i]["del"] == "yes") {
               markers.splice(i, 1);
             }
             else {
+              //gives new markers their IDs 
               if(marker.ID == -1) {
                 marker.ID = data[i].ID;
               }
@@ -280,6 +291,7 @@ function update() {
         if(status == "Error") {
           alert(error);
         }
+        //status of button reflects error status of ajax call.
         $("#save").attr("value", status);
       },
       error:function(xhr, status, errorThrown){
@@ -295,6 +307,7 @@ function update() {
 
       }
     });
+    //changes status of button back to save.
     setTimeout( function() {
       $("#save").attr("value", "Save");  
       }, 
@@ -302,7 +315,7 @@ function update() {
     requestActive = false;      
   }
 }
-//adds address from geocoder for the given marker.
+//adds address from geocoder to the given marker based on marker's location.
 function getAdd(marker) {
   geocoder.geocode({'location': marker.getPosition()}, function(results, status) {
     if (status == google.maps.GeocoderStatus.OK) {
@@ -318,7 +331,7 @@ function getAdd(marker) {
     }
   });     
 }
-//Adds content to the infowindow of the given marker.
+//Adds HTML content to the given infowindow of the given marker based on marker's properties.
 function content(marker, infoWindow) {
   if(marker.visited) {
     infoWindow.setContent("<div class='info_window'><h1>" + marker.h1 + "</h1><p>" + marker.add +               
@@ -338,7 +351,7 @@ function content(marker, infoWindow) {
   }
      
  }
- //Creates a marker from the given data
+ //Creates a marker from the given data array
 function makeMarker(data) {
   var marker = new google.maps.Marker({
     position: new google.maps.LatLng(data["lat"], data["lng"]),
@@ -355,42 +368,55 @@ function makeMarker(data) {
     edited: data["edited"]
   });
   markers.push(marker);
-  if(subG[marker.group] == null) {
-    subG[marker.group] = marker.number;
+  //If marker has a group.
+  if(marker.group != "" && marker.group != null) {
+    //If subgroup is not already represented in associative array add it.
+    if(subG[marker.group] == null) {
+      subG[marker.group] = marker.number;
+    }
+    //If marker's number is greater than number in subG make it the number in subG
+    else if(subG[marker.group] < marker.number){
+      subG[marker.group] = marker.number;
+    }
+    //If part of group but number is not updated (support weird errors?)
+    if(marker.number == -1) {
+      marker.number = subG[marker.group] + 1;
+      subG[marker.group] = subG[marker.group] + 1;
+    }
   }
-  else if(subG[marker.group] < marker.number){
-    subG[marker.group] = marker.number;
-  }
-  if(marker.number == -1 && !(marker.group == null)) {
-    marker.number = subG[marker.group] + 1;
-    subG[marker.group] = subG[marker.group] + 1;
-  }
+  //change database int valeu to boolean
   if(data["visited"] == 1) {
     marker.visited = true;
   }
+  //if not visited put on map.
   else {
     marker.setMap(map);
   }
+  //if no address use geocoder to find it.
   if(marker.add == "") {
       getAdd(marker);
   }
   //InfoWindow setup
   var infoWindow = new google.maps.InfoWindow({});
   google.maps.event.addListener(infoWindow, 'domready', function() {
+    //changes the name of the location
     $('input[type="button"][value="edit"]').click(function() {
       $(this).siblings("h1").text(
         $(this).siblings("input[type='text']").val());
       marker.h1 = $(this).siblings("input[type='text']").val();
       marker.edited = true;
     });
+    //deleted this marker from the map and flags it for deletion from the database.
     $('input[type="button"][value="delete"]').click(function() {
       marker.setMap(null);
       marker.del = true;
       marker.edited = true;
     });
+    //Sets the marker to be draggable.
     $('input[type="button"][value="move"]').click(function() {
       marker.setDraggable(true);
     });
+    //Changes if a location has been visited and toggles visibility of marker.
     $('input[type="button"][name="visit"]').click(function() {
       marker.edited = true;
       if(marker.visited) {
@@ -399,27 +425,41 @@ function makeMarker(data) {
       else {
         $('input[type="button"][name="visit"]').attr("value", "unvisit");
         if(!visit_visible) {
+          infoWindow.close();
           marker.setMap(null);
         }        
       }
       marker.visited = ! marker.visited;
     });   
   });
+  //handler for clicking Markers
   google.maps.event.addListener(marker, 'click', function(event) {
     content(marker, infoWindow);
+    //if there is no route being added to open info window.
     if(!add) {
       infoWindow.open(map, marker);
     }
+    //Adds to route and changes point to route visibility.
     else {
-      if(marker.group != route) {
-        marker.group = route;
-        marker.number = subG[marker.group] + 1;
-        marker.label = marker.number;
-        subG[marker.group] = subG[marker.group] + 1; 
-        marker.edited = true;
+      marker.group = route; //route changes based on the route selected in the multiple select menu.
+      if(checkVisible(marker)) {
+        if(marker.getMap() == null) {
+          marker.setMap(map);
+        }
       }
+      else {
+        if(marker.getMap() != null) {
+          marker.setMap(null);
+        }
+      }
+      //Changes marker properties to add it to the end of the route.
+      marker.number = subG[marker.group] + 1;
+      marker.label = marker.number;
+      subG[marker.group] = subG[marker.group] + 1; 
+      marker.edited = true;
     }
   });
+  //Stops marker from being draggable if it has been dragged.
   google.maps.event.addListener(marker, 'dragend', function(event) {
     marker.edited = true;
     marker.setDraggable(false);
@@ -428,7 +468,13 @@ function makeMarker(data) {
   });      
 }
 window.onload = loadScript;
-
-
-//TODO FIX add to route when route isnt visible
-//TODO FIX route visibility showed visited places.
+//Checks if the given marker is visible according to the muliple select dropdown menu.
+function checkVisible(marker) {
+  var routes = $("#route_view").multipleSelect("getSelects", "text");
+  for (var i = routes.length - 1; i >= 0; i--) {
+    if(marker.group.toString().trim() == routes[i].toString().trim()) {
+      return true;
+    }
+  }
+  return false;
+}

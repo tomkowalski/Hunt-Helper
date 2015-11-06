@@ -42,7 +42,6 @@ foreach($_POST["array"] as $marker) {
 	$lng =escape($marker['lng']);
 	$title = escape($marker['title']);
 	$add = escape($marker['address']);
-	$group = escape($marker['group']);
 	$subgroup = escape($marker['subgroup']);
 	$visited = escape($marker['visited']);
 	$del = escape($marker['del']);
