@@ -80,11 +80,10 @@ window.onload = function () {
   //changes current marker to the next marker and updates database to say cur is visited.
   $("#visited").click(function() {
     if(!(cur == null)) {
+      var marker = getMarker(true);
       cur.visited = true;
-      cur.edited = true;
       cur.setMap(null);
       update();
-      var marker = getMarker(true);
       setTimeout( function() {
           if(marker != null) {
             $("#place-name").html("<h1>" + marker.h1 + "</h1>");
@@ -139,11 +138,10 @@ function makeMarker(data) {
   //InfoWindow setup
   var infoWindow = new google.maps.InfoWindow({});
   //opens infoWindow on marker click.
-  google.maps.event.addListener(infoWindow, 'domready', function() {
-    google.maps.event.addListener(marker, 'click', function(event) {
-      content(marker, infoWindow);
-      infoWindow.open(map, marker);
-    });  
+  google.maps.event.addListener(marker, 'click', function(event) {
+    content(marker, infoWindow);
+    infoWindow.open(map, marker);  
+  });
   return marker;  
 }
  //ajax call for getting markers in route.
@@ -189,8 +187,8 @@ function getRoute(route, firstTime) {
 function getMax() {
   var max = 0;
   for (var i = markers.length - 1; i >= 0; i--) {
-    if(parseInt(markers[i].number) > max) {
-      max = parseInt(markers[i].number);
+    if(markers[i].number > max && !markers[i].visited) {
+      max = markers[i].number;
     }
   }
   return max;
@@ -200,9 +198,9 @@ function getMin() {
   var min = 0;
   var found = false;
   for (var i = markers.length - 1; i >= 0; i--) {
-    if(parseInt(markers[i].number) < min 
-      || !found) {
-      min = parseInt(markers[i].number);
+    if(!markers[i].visited && (markers[i].number < min 
+      || !found)) {
+      min = markers[i].number;
       found = true;
     }
   }
@@ -268,7 +266,7 @@ function update() {
     title: cur.h1,
     address: cur.add,
     subgroup: cur.group,
-    visited: true,
+    visited: 1,
     del: cur.del
   };
   //If a request isnt already in progress try and do an ajax call.
