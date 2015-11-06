@@ -46,7 +46,7 @@ nav {
 }
 nav img {
 	display: inline;	
-	vertical-align: middle;	
+	vertical-align: middle;
 }
 nav ul {
 	display: inline;
@@ -152,4 +152,12 @@ input[type="radio"] {
 	display: inline;	
 	vertical-align: middle;	
 	width: 30%;
+}
+a {
+	color: #4D4D4D;
+	font-style: normal;
+	text-decoration: none;
+}
+a:hover {
+	color: #CA0000;
 }

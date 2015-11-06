@@ -18,7 +18,13 @@ $conn = login();
 if(!isset($groupID)) {
 	$groupID = -1;
 }
-$result = $conn->query("SELECT * FROM place WHERE group_key='$groupID'");
+if(isset($_POST['route'])) {
+	$route = $conn->real_escape_string($_POST['route']);
+	$result = $conn->query("SELECT * FROM place WHERE group_key='$groupID' AND sub_group='$route'");
+}
+else {
+	$result = $conn->query("SELECT * FROM place WHERE group_key='$groupID'");
+}
 if(!$result) {
 	$out["status"][0] = "error";
 }

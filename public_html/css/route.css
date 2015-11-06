@@ -1,0 +1,9 @@
+#map-canvas { 
+	height: 75%; 
+
+	padding: 0 0;
+	clear: both;
+}
+#route_select {
+	width: 50%;
+}

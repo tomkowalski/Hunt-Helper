@@ -5,7 +5,6 @@ $i = 0;
 session_start();
 //If user is signed in get info
 if(isset($_SESSION['ID']) && $_SESSION['ID'] > 0){
-	$out["Test"] = "wtf";
 	$id= $_SESSION['ID'];
 	$conn = login();
 	$lat = escape($_POST["lat"]);
@@ -35,6 +34,9 @@ foreach($_POST["array"] as $marker) {
 	else {
 		$id = escape($marker['id']);	
 	}
+	if(isset($_SESSION['ID'])){
+		$uid= $_SESSION['ID'];
+	}
 	$num = escape($marker['number']);
 	$lat = escape($marker['lat']);
 	$lng =escape($marker['lng']);
@@ -44,15 +46,16 @@ foreach($_POST["array"] as $marker) {
 	$subgroup = escape($marker['subgroup']);
 	$visited = escape($marker['visited']);
 	$del = escape($marker['del']);
-	$groupID = getOne("SELECT ID FROM userGroup WHERE name='$group'", "ID");
+	$groupID = getOne("SELECT * FROM user WHERE ID='$uid'", "group_key");
 	if($groupID == "No Results") {
 		//$groupID = -1;
 	}
 	$tempOut = array();
+	$tempOut["group"] = $groupID;
 	//Add new marker.
 	if($id <= 0) {
 		if($del == "true") {
-			$tempOut["status"] = "saved";
+			$tempOut["status"] = "saved and deleted";
 			$tempOut["del"] = "yes";
 		}
 		else {
@@ -87,7 +90,7 @@ foreach($_POST["array"] as $marker) {
 				$tempOut["status"] = "error";
 			}
 			else {
-				$tempOut["status"] = "saved";
+				$tempOut["status"] = "saved as update";
 				$tempOut["ID"] = $id;
 			}
 		}
@@ -107,13 +110,13 @@ function prepCreate($groupID, $marker) {
 	$lng = htmlspecialchars_decode($marker['lng']);
 	$title = htmlspecialchars_decode($marker['title']);
 	$add = htmlspecialchars_decode($marker['address']);
-	$subgroup = null;
+	$subgroup = htmlspecialchars_decode($marker['subgroup']);
 	$visited = htmlspecialchars_decode($marker['visited']);
 	$id = null;
 	//require_once('../php/db_util.php');
 	$conn = login();
 	$in = $conn->prepare('INSERT INTO place VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)');
-	$in->bind_param("ssddiiiii", $title, $add, $lat, $lng, $groupID, $subgroup, $num, $visited, $id);
+	$in->bind_param("ssddisiii", $title, $add, $lat, $lng, $groupID, $subgroup, $num, $visited, $id);
 	$in->execute();
 	$rows = $in->affected_rows;
 	$in->close();
@@ -126,7 +129,7 @@ function prepCreate($groupID, $marker) {
 		}
 	}
 	else {
-		$tempOut["status"] = "Saved";
+		$tempOut["status"] = "Saved as new";
 		$tempOut["ID"] = getOne("SELECT ID FROM place WHERE name='$title' AND address='$add' AND group_key='$groupID' AND position='$num'", "ID");
 	}
 	return $tempOut; 

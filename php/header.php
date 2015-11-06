@@ -32,6 +32,15 @@ __HTML;
 		<script type="text/javascript" src="$path/js/save_places.js"></script>
 __HTML;
 		}
+		if($page == "Routes") { //Script and css needed for Route page
+			$out .= <<<__HTML
+		<link rel="stylesheet" href="$path/css/multiple-select.css"/>
+		<link rel="stylesheet" href="$path/css/route.css"/>
+		<script src="$path/js/jquery.multiple.select.js"></script>
+		<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=places&js?v=3.21$key=AIzaSyA0lAOq5lLPLFlJ6mxDOIvJK_5y1WBE28Y&signed_in=false"></script>
+		<script type="text/javascript" src="$path/js/route.js"></script>
+__HTML;
+		}
 		$out .= "<style>
 				nav li {
 					width: $width%;
@@ -56,8 +65,8 @@ __HTML;
 					<ul>
 						<li><a href="$path/index.php">Map</a></li>
 						<li id='group'>$group</li>
-						<li><a href='location.php'>Location</a></li>
-						<li>My Route</l1>
+						<li><a href='$path/location.php'>Location</a></li>
+						<li><a href='$path/route.php'>Routes</a></li>
 						<li id='user'><a href="$path/login.php">My $name</a></li>
 					</ul>
 				</nav>

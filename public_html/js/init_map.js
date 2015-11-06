@@ -1,4 +1,3 @@
-var num = 0;
 var map; //The Google Map Object
 var geocoder; //The Google Geocoder Object
 var markers = []; //Array of Markers in the current Map
@@ -7,7 +6,7 @@ var autocomplete; //The Google Autocomplete object
 var newRoute = true; //Should a new route be made if the route button is clicked
 var add = false; //Should 
 var route = null; //What route should markers be added to.
-var subG = {}; //? 
+var subG = {}; // "associative array" of subgroup last values
 var visit_visible = false;
 var pos; //Position of the page
 function initialize() {
@@ -87,7 +86,7 @@ function initialize() {
   $('#route_select').multipleSelect({
     placeholder: "Add To Route",
     single: true,
-    position: 'top',
+    //position: 'top',
     onClick: function(view) { //if a route is cicked updates the values of add and route to the correct values.
       if(view.label.trim() != "No Route") {
         add = true;
@@ -134,12 +133,13 @@ function initialize() {
       var route = "<option value='"
         + $("#new_route_text").val() + "'>"
         + $("#new_route_text").val() + "</option>";
+      subG[$("#new_route_text").val()] = 0;
       $("select").append(route).multipleSelect("refresh");
       var get_sel = $("#route_view").multipleSelect('getSelects');
       get_sel.push($("#new_route_text").val());
       $("#route_view").multipleSelect('setSelects', get_sel);
       $("#new_route_text").remove();
-      $("#new_route_button").attr("value","New Route");
+      $("#new_route_button").attr("value","New Route");  
     }
     newRoute = !newRoute;
   });
@@ -149,7 +149,7 @@ function initialize() {
     makeMarker({
       lat: place.geometry.location.lat(),
       lng: place.geometry.location.lng(),
-      position: num++,
+      position: -1,
       name: place.name,
       address: place.formatted_address,
       ID: -1,    
@@ -165,7 +165,7 @@ function initialize() {
     makeMarker({
       lat: event.latLng.lat(),
       lng: event.latLng.lng(),
-      position: num++,
+      position: -1,
       name: "Location",
       address: "",
       ID: -1,    
@@ -201,7 +201,7 @@ function initialize() {
 function loadScript() {
   var script = document.createElement('script');
   script.type = 'text/javascript';
-  script.src = 'https://maps.googleapis.com/maps/api/js?libraries=places&v=3.exp$key=AIzaSyA0lAOq5lLPLFlJ6mxDOIvJK_5y1WBE28Y' +
+  script.src = 'https://maps.googleapis.com/maps/api/js?libraries=places&js?v=3.21$key=AIzaSyA0lAOq5lLPLFlJ6mxDOIvJK_5y1WBE28Y' +
       '&signed_in=false&callback=initialize';
   document.body.appendChild(script);
 }
@@ -345,7 +345,7 @@ function makeMarker(data) {
     map: null,
     title: data["position"].toString(),
     draggable: false,
-    number: data["position"],
+    number: parseInt(data["position"]),
     h1: data["name"],
     add: data["address"],
     ID: data["ID"],    
@@ -355,15 +355,21 @@ function makeMarker(data) {
     edited: data["edited"]
   });
   markers.push(marker);
+  if(subG[marker.group] == null) {
+    subG[marker.group] = marker.number;
+  }
+  else if(subG[marker.group] < marker.number){
+    subG[marker.group] = marker.number;
+  }
+  if(marker.number == -1 && !(marker.group == null)) {
+    marker.number = subG[marker.group] + 1;
+    subG[marker.group] = subG[marker.group] + 1;
+  }
   if(data["visited"] == 1) {
     marker.visited = true;
   }
   else {
     marker.setMap(map);
-  }
-
-  if(data["position"] > num) { //TODO
-    num = data["position"];  
   }
   if(marker.add == "") {
       getAdd(marker);
@@ -405,7 +411,13 @@ function makeMarker(data) {
       infoWindow.open(map, marker);
     }
     else {
-      marker.group = route;
+      if(marker.group != route) {
+        marker.group = route;
+        marker.number = subG[marker.group] + 1;
+        marker.label = marker.number;
+        subG[marker.group] = subG[marker.group] + 1; 
+        marker.edited = true;
+      }
     }
   });
   google.maps.event.addListener(marker, 'dragend', function(event) {
@@ -416,3 +428,7 @@ function makeMarker(data) {
   });      
 }
 window.onload = loadScript;
+
+
+//TODO FIX add to route when route isnt visible
+//TODO FIX route visibility showed visited places.
