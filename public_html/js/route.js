@@ -98,7 +98,13 @@ window.onload = function () {
         500);
     }
   });
+  //Moves map to view current marker. 
+  $('#current').click(function() {
+    map.panTo(cur.getPosition());
+    map.setZoom(16);
+  }) 
   //attaches buttons to google map positions.
+  map.controls[google.maps.ControlPosition.BOTTOM_CENTER].push($('#current').get(0));
   map.controls[google.maps.ControlPosition.TOP_RIGHT].push($('.ms-parent:eq(0)').get(0));
   map.controls[google.maps.ControlPosition.TOP_LEFT].push($('#visited').get(0));
   map.controls[google.maps.ControlPosition.RIGHT_CENTER].push($('#next').get(0));

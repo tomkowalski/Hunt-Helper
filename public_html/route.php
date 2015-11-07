@@ -13,6 +13,7 @@ $body =  <<<__HTML
 	<input id='visited' type='button' value='Visit'>
 	<input id='next' type='button' value='Next'>
 	<input id='prev' type='button' value='Prev'>
+	<input id='current' type='button' value='Go to Current'>
 </body>
 __HTML;
 echo head(".", "Routes");
