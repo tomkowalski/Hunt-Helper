@@ -356,13 +356,13 @@ function makeMarker(data) {
   var marker = new google.maps.Marker({
     position: new google.maps.LatLng(data["lat"], data["lng"]),
     map: null,
-    title: data["position"].toString(),
+    //title: data["position"].toString(),
     draggable: false,
     number: parseInt(data["position"]),
     h1: data["name"],
     add: data["address"],
     ID: data["ID"],    
-    visited: false,
+    visited: data["visited"] == 1,
     group: data["sub_group"],
     del: false,
     edited: data["edited"]
@@ -384,12 +384,8 @@ function makeMarker(data) {
       subG[marker.group] = subG[marker.group] + 1;
     }
   }
-  //change database int valeu to boolean
-  if(data["visited"] == 1) {
-    marker.visited = true;
-  }
   //if not visited put on map.
-  else {
+  if(!marker.visited) {
     marker.setMap(map);
   }
   //if no address use geocoder to find it.
