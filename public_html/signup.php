@@ -14,20 +14,26 @@
 			&& isset($_POST["uName"])
 			//&& isset($_POST["gName"])
 			&& isset($_POST["pass"])
-			//&& isset($_POST["passConf"])
+			&& isset($_POST["passConf"])
 			&& isset($_POST["email"])
 			//&& isset($_POST["emailConf"])
 			/*&& isset($_POST["gPass"])*/) {
-				$rows = prep();
-				if($rows == 1) {	
-					$_SESSION["signup"] = "YES";
-					$_SESSION["temp_uname"] = escape($_POST["uName"]);
-					include("group_signup.php");
-					$body = group();
-					$_SESSION["signup"] = null;
+				if($_POST["pass"] == $_POST["passConf"]) {
+					$rows = prep();
+				
+					if($rows == 1) {	
+						$_SESSION["signup"] = "YES";
+						$_SESSION["temp_uname"] = escape($_POST["uName"]);
+						include("group_signup.php");
+						$body = group();
+						$_SESSION["signup"] = null;
+					}
+					else {
+						$_SESSION["error"] = $rows;
+					}
 				}
 				else {
-					$_SESSION["error"] = $rows;
+					$_SESSION["error"] = "Passwords do not match";
 				}
 			}
 			else {
@@ -37,7 +43,7 @@
 		$error = $_SESSION["error"];
 		if($body == null) {
 			$body = <<<__HTML
-			$error
+			<h2> $error </h2>
 			<h1> Sign up below: </h1>
 			<div class="form">
 				<form method="post" action="signup.php">
@@ -46,6 +52,7 @@
 					Last Name:  <br><input type = "text" name="lName"><br>
 					User Name:  <br><input type = "text" name="uName"><br>
 					Password:   <br><input type = "password" name="pass"><br>
+					Password Confirm: <br><input type = "password" name="passConf"> <br>
 					Email:      <br><input type = "email" name="email"><br>
 					<input type="submit" value="Sign up!">
 				</form>
@@ -57,7 +64,6 @@ __HTML;
 	echo head(".", "Sign Up");
 	echo $body;
 	echo foot(".");
-	//Password Confirm: <input type = "password" name="passConf"> <br>
 	//Email Confirm: <input type = "email" name="emailConf"><br>
 	//Group Password: <input type = "password" name="gPass"><br>
 	function prep() {
