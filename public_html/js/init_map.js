@@ -4,7 +4,7 @@ var markers = []; //Array of Markers in the current Map
 var requestActive = false; //Is there an Ajax request going on currently
 var autocomplete; //The Google Autocomplete object
 var newRoute = true; //Should a new route be made if the route button is clicked
-var add = false; //Should 
+var add = false; //Should a marker be added to route when clicked.
 var route = null; //What route should markers be added to.
 var subG = []; // "associative array" of subgroup last values
 var visit_visible = false;
@@ -163,7 +163,7 @@ function initialize() {
       edited: true
     });
     map.panTo(place.geometry.location);
-    map.setZoom(15);
+    map.setZoom(16);
   });
   //Listener for map that adds a marker when the map is double clicked.
   google.maps.event.addListener(map, 'dblclick', function(event) { //TODO ABSTRACT

@@ -100,8 +100,10 @@ window.onload = function () {
   });
   //Moves map to view current marker. 
   $('#current').click(function() {
-    map.panTo(cur.getPosition());
-    map.setZoom(16);
+    if(!(cur == null)) {
+      map.panTo(cur.getPosition());
+      map.setZoom(16);
+    }
   }) 
   //attaches buttons to google map positions.
   map.controls[google.maps.ControlPosition.BOTTOM_CENTER].push($('#current').get(0));
