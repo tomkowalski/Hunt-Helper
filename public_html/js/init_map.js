@@ -91,7 +91,7 @@ function initialize() {
   $('#route_select').multipleSelect({
     placeholder: "Add To Route",
     single: true,
-    //position: 'top',
+    position: "top",
     onClick: function(view) { //if a route is cicked updates the values of add and route to the correct values.
       if(view.label.trim() != "No Route") {
         add = true;
