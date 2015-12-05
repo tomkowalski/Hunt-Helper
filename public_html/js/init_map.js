@@ -181,7 +181,7 @@ function initialize() {
     });
   });
   //ajax call for getting inital places and location on screen if user is signed in.
-  $.ajax({
+  $.ajax({//TODO PROMISES
     url: 'ajax/get_places.php',
     data:{},
     dataType:'json',
@@ -473,4 +473,83 @@ function checkVisible(marker) {
     }
   }
   return false;
+}
+
+
+function getRouteOrder(startMark) {
+  var curRoute = [];
+  var finalRoute = [];
+  for(var i = 0; i < markers.length; i++) {
+    if(markers[i].group == startMark.group) {
+      curRoute.push({
+        marker: markers[i],
+        visited: false
+      });
+    }
+  }
+  var currentPoint = {marker: startMark, visited: false};
+  for(var i = 0; i < curRoute.length; i++) {
+    var minMark = currentPoint;
+    var minDist = 0;
+    console.log(curRoute);
+    for(var j = 0; j < curRoute.length; j++) {
+      if(!curRoute[j].visited && curRoute[j] != currentPoint && !curRoute[j].marker.visited) {
+        console.log(j);
+        console.log(currentPoint);
+        console.log(curRoute[j]);
+        var tempDist = getDist(currentPoint.marker.getPosition(), curRoute[j].marker.getPosition());
+        if(minMark == currentPoint) {
+          minDist = tempDist;
+          minMark = curRoute[j];
+        }
+        else if(minDist > tempDist) {
+          minDist = tempDist;
+          minMark = curRoute[j];
+        }
+      }
+    }
+    currentPoint.visited = true;
+    finalRoute.push(currentPoint.marker.getPosition());
+    currentPoint = minMark;
+  }
+  finalRoute.push(finalRoute[0]);
+  var setRoute = new google.maps.Polyline({
+    path: finalRoute,
+    geodesic: true,
+    strokeColor: '#FF0000',
+    strokeOpacity: 1.0,
+    strokeWeight: 2
+  });
+  setRoute.setMap(map);
+}
+const radiusOfEarth = 6371000; // in meters
+ 
+// Converts the given degrees to radians
+function degreesToRadian(degrees) {
+        return degrees * Math.PI / 180;
+}
+ 
+ 
+// takes latitude and longitude in degrees and radius of the sphere
+function haversineDistance(lat1, long1, lat2, long2, radius) {
+        var latrd1 = degreesToRadian(lat1);
+        var longrd1 = degreesToRadian(long1);
+       
+        var latrd2 = degreesToRadian(lat2);
+        var longrd2 = degreesToRadian(long2);
+       
+        var deltaLat = latrd2 - latrd1;
+        var deltaLong = longrd2 - longrd1;
+       
+        var a = Math.sin(deltaLat/2) * Math.sin(deltaLat/2) +
+    Math.cos(lat1) * Math.cos(lat2) *
+    Math.sin(deltaLong/2) * Math.sin(deltaLong/2);
+        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+ 
+        return radius * c;
+}
+ 
+// takes two LatLngs and computes the distance between them
+function getDist(latlng1, latlng2) {
+        haversineDistance(latlng1.lat(), latlng1.lng(), latlng2.lat(), latlng2.lng(), radiusOfEarth);
 }
