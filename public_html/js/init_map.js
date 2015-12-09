@@ -9,6 +9,8 @@ var route = null; //What route should markers be added to.
 var subG = []; // "associative array" of subgroup last values
 var visit_visible = false;
 var pos; //Position of the page
+var polyRoute = null; //The drawn route to be shown on the screen
+var findRoute = false; //Should a marker's route be found when clicked
 function initialize() {
   pos = new google.maps.LatLng(38.8833, -77.0167); //Default location of the map
   /*if(navigator.geolocation) {
@@ -42,6 +44,8 @@ function initialize() {
     + '</div>'
     + '<div id="show_visited">'
     + '<input id="show_visited_button" type="button" value="Toggle Visited Visibility">'
+    + '</div>'
+    + '<input id="find_route" type="button" value="Calculate Route">'
     + '</div>');
    $("#save").click(update);
    //Adds a route selection drop down menus and the listeners on them.
@@ -112,6 +116,7 @@ function initialize() {
   map.controls[google.maps.ControlPosition.TOP_LEFT].push($('#auto-c').get(0));
   map.controls[google.maps.ControlPosition.LEFT_TOP].push($('#show_visited').get(0));
   map.controls[google.maps.ControlPosition.BOTTOM_CENTER].push($('#save').get(0));
+  map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push($('#find_route').get(0));
   map.controls[google.maps.ControlPosition.TOP_RIGHT].push($('.ms-parent:eq(0)').get(0));
   map.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push($('.ms-parent:eq(1)').get(0));
   map.controls[google.maps.ControlPosition.RIGHT_TOP].push($('#new_route').get(0));
@@ -148,6 +153,17 @@ function initialize() {
     }
     newRoute = !newRoute;
   });
+  $('#find_route').click(function() {
+    if(findRoute) {
+      $("#find_route").attr("value","Calculate Route");
+      findRoute = false;
+    }
+    else {
+      $("#find_route").attr("value","Click A Point to Find it's Route");
+      findRoute = true;
+
+    }
+  });
   //Listener for autocomplete to add a marker based on a search
   google.maps.event.addListener(autocomplete, 'place_changed', function() {
     var place = autocomplete.getPlace();
@@ -166,7 +182,7 @@ function initialize() {
     map.setZoom(16);
   });
   //Listener for map that adds a marker when the map is double clicked.
-  google.maps.event.addListener(map, 'dblclick', function(event) { //TODO ABSTRACT
+  google.maps.event.addListener(map, 'dblclick', function(event) {
     makeMarker({
       lat: event.latLng.lat(),
       lng: event.latLng.lng(),
@@ -181,7 +197,7 @@ function initialize() {
     });
   });
   //ajax call for getting inital places and location on screen if user is signed in.
-  $.ajax({//TODO PROMISES
+  $.ajax({
     url: 'ajax/get_places.php',
     data:{},
     dataType:'json',
@@ -431,8 +447,13 @@ function makeMarker(data) {
   //handler for clicking Markers
   google.maps.event.addListener(marker, 'click', function(event) {
     content(marker, infoWindow);
+    if(findRoute) {
+      drawRoute(getRouteOrder(marker));
+      findRoute = false;
+      $("#find_route").attr("value","Calculate Route");
+    }
     //if there is no route being added to open info window.
-    if(!add) {
+    else if(!add) {
       infoWindow.open(map, marker);
     }
     //Adds to route and changes point to route visibility.
@@ -474,82 +495,120 @@ function checkVisible(marker) {
   }
   return false;
 }
-
-
-function getRouteOrder(startMark) {
-  var curRoute = [];
-  var finalRoute = [];
-  for(var i = 0; i < markers.length; i++) {
-    if(markers[i].group == startMark.group) {
-      curRoute.push({
-        marker: markers[i],
-        visited: false
-      });
-    }
+//
+function drawRoute(arr) {
+  if(arr.length != 0){
+    //arr.push(arr[0]);
   }
-  var currentPoint = {marker: startMark, visited: false};
-  for(var i = 0; i < curRoute.length; i++) {
-    var minMark = currentPoint;
-    var minDist = 0;
-    console.log(curRoute);
-    for(var j = 0; j < curRoute.length; j++) {
-      if(!curRoute[j].visited && curRoute[j] != currentPoint && !curRoute[j].marker.visited) {
-        console.log(j);
-        console.log(currentPoint);
-        console.log(curRoute[j]);
-        var tempDist = getDist(currentPoint.marker.getPosition(), curRoute[j].marker.getPosition());
-        if(minMark == currentPoint) {
-          minDist = tempDist;
-          minMark = curRoute[j];
-        }
-        else if(minDist > tempDist) {
-          minDist = tempDist;
-          minMark = curRoute[j];
-        }
-      }
-    }
-    currentPoint.visited = true;
-    finalRoute.push(currentPoint.marker.getPosition());
-    currentPoint = minMark;
+  for(var i = 0; i < arr.length; i++) {
+    arr[i] = arr[i].getPosition();
   }
-  finalRoute.push(finalRoute[0]);
   var setRoute = new google.maps.Polyline({
-    path: finalRoute,
+    path: arr,
     geodesic: true,
     strokeColor: '#FF0000',
     strokeOpacity: 1.0,
     strokeWeight: 2
   });
-  setRoute.setMap(map);
+  if(polyRoute != null) {
+    polyRoute.setMap(null);
+  }
+  polyRoute = setRoute;
+  polyRoute.setMap(map);
 }
-const radiusOfEarth = 6371000; // in meters
+//Given a Marker returns the 
+function getRouteOrder(startMark) {
+  var curRoute = [];
+  var finalRoute = [startMark];
+  var startIndex = 0;
+  var count = 0;
+  for(var i = 0; i < markers.length; i++) {
+    if((markers[i].group == startMark.group 
+      || ((startMark.group == "" && markers[i].group == null)
+      || (startMark.group == null && markers[i].group == "")))
+      && !markers[i].visited) {
+      curRoute.push({
+        marker: markers[i],
+        visited: false
+      });
+      if(markers[i] == startMark) {
+        startIndex = count;
+      }
+      count++;
+    }
+  }
+  //Creates the lookup table for all distances using the indicies of 
+  //markers in relation to their position in curRoute. 
+  var distTable = [];
+  for(var start = 0; start < curRoute.length; start++) {
+    distTable[start] = [];
+    for(var end = 0; end < curRoute.length; end++) {
+      distTable[start][end] = 
+      getDist(curRoute[start].marker.getPosition(), 
+              curRoute[end].marker.getPosition()); 
+    }
+  }
+  console.log(distTable);
+  console.log(curRoute);
+  var currentIndex = startIndex;
+  curRoute[startIndex].visited = true;
+  for(var i = 0; i < curRoute.length - 1; i++) {
+    var minMark = null;
+    var minDist = 0;
+    console.log("Current Index: " + currentIndex);
+    for(var end = 0; end < distTable[currentIndex].length; end++) {
+      if((distTable[currentIndex][end] < minDist || minDist == 0) 
+      && !curRoute[end].visited) {
+        minDist = distTable[currentIndex][end];
+        minMark = curRoute[end];
+      }
+      console.log(end);
+      console.log(minDist);
+      console.log(minMark);
+
+    }
+    minMark.visited = true;
+    finalRoute.push(minMark.marker);
+    currentIndex = curRoute.indexOf(minMark);
+  }
+  console.log(finalRoute);
+  return finalRoute;
+}
+const radiusOfEarth = 6372.8; // in kilometers
  
 // Converts the given degrees to radians
 function degreesToRadian(degrees) {
-        return degrees * Math.PI / 180;
+        return degrees/180 * Math.PI ;
 }
  
  
 // takes latitude and longitude in degrees and radius of the sphere
 function haversineDistance(lat1, long1, lat2, long2, radius) {
+  console.log("coord 1");
+  console.log(lat1);
+  console.log(long1);
+  console.log("coord 2");
+  console.log(lat2);
+  console.log(long2);
+
         var latrd1 = degreesToRadian(lat1);
         var longrd1 = degreesToRadian(long1);
        
         var latrd2 = degreesToRadian(lat2);
         var longrd2 = degreesToRadian(long2);
+        
+        var dLat = latrd2 - latrd1;
+        var dLon = longrd2 - longrd1;
        
-        var deltaLat = latrd2 - latrd1;
-        var deltaLong = longrd2 - longrd1;
-       
-        var a = Math.sin(deltaLat/2) * Math.sin(deltaLat/2) +
-    Math.cos(lat1) * Math.cos(lat2) *
-    Math.sin(deltaLong/2) * Math.sin(deltaLong/2);
-        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
- 
+         var a = Math.sin(dLat / 2) * Math.sin(dLat /2) 
+         + Math.sin(dLon / 2) * Math.sin(dLon /2) 
+         * Math.cos(latrd1) * Math.cos(latrd2);
+       var c = 2 * Math.asin(Math.sqrt(a));
+ console.log("dist: " + (radius * c))
         return radius * c;
 }
  
 // takes two LatLngs and computes the distance between them
 function getDist(latlng1, latlng2) {
-        haversineDistance(latlng1.lat(), latlng1.lng(), latlng2.lat(), latlng2.lng(), radiusOfEarth);
+  return haversineDistance(latlng1.lat(), latlng1.lng(), latlng2.lat(), latlng2.lng(), radiusOfEarth);
 }
