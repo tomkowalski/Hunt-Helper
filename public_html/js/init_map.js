@@ -9,8 +9,11 @@ var route = null; //What route should markers be added to.
 var subG = []; // "associative array" of subgroup last values
 var visit_visible = false;
 var pos; //Position of the page
-var polyRoute = null; //The drawn route to be shown on the screen
+var nnPolyRoute = null; //The drawn route to be shown on the screen
+var pPolyRoute = null; //The drawn route to be shown on the screen
 var findRoute = false; //Should a marker's route be found when clicked
+var routeFound = false;
+var showNN = true;
 function initialize() {
   pos = new google.maps.LatLng(38.8833, -77.0167); //Default location of the map
   /*if(navigator.geolocation) {
@@ -219,6 +222,20 @@ function initialize() {
       alert("error" + status + errorThrown);
     }
   });
+  window.setInterval(function(){
+    if(routeFound) {
+      if(showNN) {
+        pPolyRoute.setMap(null);
+        nnPolyRoute.setMap(map);
+        showNN = !showNN;
+      }
+      else {
+        nnPolyRoute.setMap(null);
+        pPolyRoute.setMap(map);
+        showNN = !showNN;
+      }
+    }
+  }, 1000);
 }
 //Adds map script elements to page.
 function loadScript() {
@@ -448,7 +465,9 @@ function makeMarker(data) {
   google.maps.event.addListener(marker, 'click', function(event) {
     content(marker, infoWindow);
     if(findRoute) {
-      drawRoute(getRouteOrder(marker));
+      pPolyRoute = drawRoute(getNearestNeighbor(marker).route, '#FF0000');
+      nnPolyRoute = drawRoute(bestProgressiveRoute(marker, 2000), '#0000FF');
+      routeFound = true;
       findRoute = false;
       $("#find_route").attr("value","Calculate Route");
     }
@@ -496,30 +515,26 @@ function checkVisible(marker) {
   return false;
 }
 //
-function drawRoute(arr) {
+function drawRoute(arr, color) {
   if(arr.length != 0){
-    //arr.push(arr[0]);
+    arr.push(arr[0]);
   }
   for(var i = 0; i < arr.length; i++) {
-    arr[i] = arr[i].getPosition();
+    arr[i] = arr[i].marker.getPosition();
   }
   var setRoute = new google.maps.Polyline({
     path: arr,
     geodesic: true,
-    strokeColor: '#FF0000',
+    strokeColor: color,
     strokeOpacity: 1.0,
     strokeWeight: 2
   });
-  if(polyRoute != null) {
-    polyRoute.setMap(null);
-  }
-  polyRoute = setRoute;
-  polyRoute.setMap(map);
+  return setRoute;
 }
 //Given a Marker returns the 
-function getRouteOrder(startMark) {
+function getNearestNeighbor(startMark) {
   var curRoute = [];
-  var finalRoute = [startMark];
+  var finalRoute = [];
   var startIndex = 0;
   var count = 0;
   for(var i = 0; i < markers.length; i++) {
@@ -529,7 +544,8 @@ function getRouteOrder(startMark) {
       && !markers[i].visited) {
       curRoute.push({
         marker: markers[i],
-        visited: false
+        visited: false, 
+        id: count
       });
       if(markers[i] == startMark) {
         startIndex = count;
@@ -538,7 +554,7 @@ function getRouteOrder(startMark) {
     }
   }
   //Creates the lookup table for all distances using the indicies of 
-  //markers in relation to their position in curRoute. 
+  //markers in relation to markers IDs. 
   var distTable = [];
   for(var start = 0; start < curRoute.length; start++) {
     distTable[start] = [];
@@ -548,31 +564,68 @@ function getRouteOrder(startMark) {
               curRoute[end].marker.getPosition()); 
     }
   }
-  console.log(distTable);
-  console.log(curRoute);
   var currentIndex = startIndex;
   curRoute[startIndex].visited = true;
+  finalRoute.push(curRoute[startIndex]);
   for(var i = 0; i < curRoute.length - 1; i++) {
     var minMark = null;
     var minDist = 0;
-    console.log("Current Index: " + currentIndex);
     for(var end = 0; end < distTable[currentIndex].length; end++) {
       if((distTable[currentIndex][end] < minDist || minDist == 0) 
       && !curRoute[end].visited) {
         minDist = distTable[currentIndex][end];
         minMark = curRoute[end];
       }
-      console.log(end);
-      console.log(minDist);
-      console.log(minMark);
-
     }
     minMark.visited = true;
-    finalRoute.push(minMark.marker);
-    currentIndex = curRoute.indexOf(minMark);
+    finalRoute.push(minMark);
+    currentIndex = minMark.id;
   }
-  console.log(finalRoute);
-  return finalRoute;
+  return {
+            route: finalRoute,
+            table: distTable
+          };
+}
+function bestProgressiveRoute(startMark, cycles) {
+  var temp = getNearestNeighbor(startMark);
+  var arr = temp.route;
+  var distTable = temp.table;
+  for(var i = 0; i < cycles; i++) {
+    arr = progressiveRoute(arr, distTable);
+  }
+
+  return arr;
+}
+function progressiveRoute(arr, distTable) {
+  var prevDist = routeDist(arr, distTable);
+  var prevArr = arr;
+  for (var elm1 = arr.length - 1; elm1 >= 0; elm1--) {
+    for (var elm2 = arr.length - 1; elm2 >= 0; elm2--) {
+      if(elm1 != elm2) {
+        var tempArr = createRoute(arr, prevArr[elm1], prevArr[elm2]);
+        var tempDist = routeDist(tempArr, distTable);
+
+        if(tempDist < prevDist){
+          prevArr = tempArr;
+          prevDist = tempDist;
+        }
+      }
+    };
+  };
+  return prevArr;
+}
+function createRoute(arr, elm1, elm2) {
+  var outArr = [];
+  for(var i = 0; i < arr.length; i++) {
+    if(arr[i] == elm1) {
+      outArr.push(elm1);
+      outArr.push(elm2);
+    }
+    else if(arr[i] != elm2) {
+      outArr.push(arr[i]);
+    } 
+  }
+  return outArr;
 }
 const radiusOfEarth = 6372.8; // in kilometers
  
@@ -584,13 +637,6 @@ function degreesToRadian(degrees) {
  
 // takes latitude and longitude in degrees and radius of the sphere
 function haversineDistance(lat1, long1, lat2, long2, radius) {
-  console.log("coord 1");
-  console.log(lat1);
-  console.log(long1);
-  console.log("coord 2");
-  console.log(lat2);
-  console.log(long2);
-
         var latrd1 = degreesToRadian(lat1);
         var longrd1 = degreesToRadian(long1);
        
@@ -604,11 +650,23 @@ function haversineDistance(lat1, long1, lat2, long2, radius) {
          + Math.sin(dLon / 2) * Math.sin(dLon /2) 
          * Math.cos(latrd1) * Math.cos(latrd2);
        var c = 2 * Math.asin(Math.sqrt(a));
- console.log("dist: " + (radius * c))
         return radius * c;
 }
  
 // takes two LatLngs and computes the distance between them
 function getDist(latlng1, latlng2) {
   return haversineDistance(latlng1.lat(), latlng1.lng(), latlng2.lat(), latlng2.lng(), radiusOfEarth);
+}
+function routeDist(arr, distTable) {
+  if(arr.length <= 1 ) {
+    return 0;
+  }
+  var last = arr[0];
+  var totalDist = 0;
+  for(var i = 1; i < arr.length; i++){
+    totalDist += distTable[last.id][arr[i].id];
+    last = arr[i];
+  }
+  totalDist += distTable[last.id][arr[0].id];
+  return totalDist;
 }
