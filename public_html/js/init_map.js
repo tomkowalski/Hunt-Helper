@@ -709,6 +709,10 @@ function statsForRoute(route) {
     pDist += tempP;
   }
   routeFound = true;
+  if(nnPolyRoute != null && pPolyRoute != null) {
+    nnPolyRoute.setMap(null);
+    pPolyRoute.setMap(null);
+  }
   nnPolyRoute = drawRoute(minNNRoute);
   pPolyRoute = drawRoute(minPRoute);
   var avNNDist = nnDist / curRoute.length;
