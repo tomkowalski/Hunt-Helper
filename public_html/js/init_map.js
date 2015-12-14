@@ -465,8 +465,12 @@ function makeMarker(data) {
   google.maps.event.addListener(marker, 'click', function(event) {
     content(marker, infoWindow);
     if(findRoute) {
+      if(nnPolyRoute != null && pPolyRoute != null) {
+        nnPolyRoute.setMap(null);
+        pPolyRoute.setMap(null);
+      }
       pPolyRoute = drawRoute(getNearestNeighbor(marker).route, '#FF0000');
-      nnPolyRoute = drawRoute(bestProgressiveRoute(marker, 2000), '#0000FF');
+      nnPolyRoute = drawRoute(bestProgressiveRoute(marker, 200), '#0000FF');
       routeFound = true;
       findRoute = false;
       $("#find_route").attr("value","Calculate Route");
@@ -541,7 +545,8 @@ function getNearestNeighbor(startMark) {
     if((markers[i].group == startMark.group 
       || ((startMark.group == "" && markers[i].group == null)
       || (startMark.group == null && markers[i].group == "")))
-      && !markers[i].visited) {
+      && !markers[i].visited 
+      && !markers[i].del) {
       curRoute.push({
         marker: markers[i],
         visited: false, 
@@ -669,4 +674,49 @@ function routeDist(arr, distTable) {
   }
   totalDist += distTable[last.id][arr[0].id];
   return totalDist;
+}
+
+function statsForRoute(route) {
+  var curRoute = [];
+  for(var i = 0; i < markers.length; i++) {
+    if((markers[i].group == route 
+      || ((route == "" && markers[i].group == null)
+      || (route == null && markers[i].group == "")))
+      && !markers[i].visited
+      && !markers[i].del) {
+      curRoute.push(markers[i]);
+    }
+  }
+  var nnDist = 0;
+  var pDist = 0;
+  var nnMin = 300000;
+  var pMin = 300000;
+  var minPRoute = null;
+  var minNNRoute = null;
+  for(var i = 0; i < curRoute.length; i++) {
+    var distTable = getNearestNeighbor(curRoute[i]).table
+    var tempNN = routeDist(getNearestNeighbor(curRoute[i]).route, distTable);
+    var tempP = routeDist(bestProgressiveRoute(curRoute[i], 100), distTable);
+    if(tempNN < nnMin) {
+      nnMin = tempNN;
+      minNNRoute = getNearestNeighbor(curRoute[i]).route;
+    }
+    if(tempP < pMin) {
+      pMin = tempP;
+      minPRoute = bestProgressiveRoute(curRoute[i], 100); 
+    }
+    nnDist += tempNN;
+    pDist += tempP;
+  }
+  routeFound = true;
+  nnPolyRoute = drawRoute(minNNRoute);
+  pPolyRoute = drawRoute(minPRoute);
+  var avNNDist = nnDist / curRoute.length;
+  var avPDist = pDist / curRoute.length;
+  console.log("Nearest Neighbor:");
+  console.log("    Average: " + avNNDist);
+  console.log("    Min: " + nnMin);
+  console.log("Progressive:");
+  console.log("    Average: " + avPDist);
+  console.log("    Min: " + pMin);
 }
