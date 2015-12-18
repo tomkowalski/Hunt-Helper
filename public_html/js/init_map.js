@@ -170,19 +170,21 @@ function initialize() {
   //Listener for autocomplete to add a marker based on a search
   google.maps.event.addListener(autocomplete, 'place_changed', function() {
     var place = autocomplete.getPlace();
-    makeMarker({
-      lat: place.geometry.location.lat(),
-      lng: place.geometry.location.lng(),
-      position: -1,
-      name: place.name,
-      address: place.formatted_address,
-      ID: -1,    
-      sub_group: null,
-      group_key: null,
-      edited: true
-    });
-    map.panTo(place.geometry.location);
-    map.setZoom(16);
+    if(typeof place.geometry !== 'undefined') {
+      makeMarker({
+        lat: place.geometry.location.lat(),
+        lng: place.geometry.location.lng(),
+        position: -1,
+        name: place.name,
+        address: place.formatted_address,
+        ID: -1,    
+        sub_group: null,
+        group_key: null,
+        edited: true
+      });
+      map.panTo(place.geometry.location);
+      map.setZoom(16);
+    }
   });
   //Listener for map that adds a marker when the map is double clicked.
   google.maps.event.addListener(map, 'dblclick', function(event) {
@@ -464,6 +466,8 @@ function makeMarker(data) {
   //handler for clicking Markers
   google.maps.event.addListener(marker, 'click', function(event) {
     content(marker, infoWindow);
+    //If findRoute button is clicked find and display the route found from this marker
+    //and its associated route. 
     if(findRoute) {
       if(nnPolyRoute != null && pPolyRoute != null) {
         nnPolyRoute.setMap(null);
@@ -518,7 +522,7 @@ function checkVisible(marker) {
   }
   return false;
 }
-//
+//Returns the PolyLine represented by the points in arr in the given color.
 function drawRoute(arr, color) {
   if(arr.length != 0){
     arr.push(arr[0]);
@@ -535,7 +539,9 @@ function drawRoute(arr, color) {
   });
   return setRoute;
 }
-//Given a Marker returns the 
+//Given a Marker returns an object containing an array representing the 
+//distance between markers in the given markers route and the 
+//nearest neighbor route starting from the starting mark.  
 function getNearestNeighbor(startMark) {
   var curRoute = [];
   var finalRoute = [];
@@ -591,6 +597,9 @@ function getNearestNeighbor(startMark) {
             table: distTable
           };
 }
+//Returns an array of objects with markers that is 
+//the Progressive Nearest Neighbor route starting at startMark with 
+//integer cycles number of progressive improvement calls. 
 function bestProgressiveRoute(startMark, cycles) {
   var temp = getNearestNeighbor(startMark);
   var arr = temp.route;
@@ -601,6 +610,9 @@ function bestProgressiveRoute(startMark, cycles) {
 
   return arr;
 }
+//Returns an array of objects with markers that finds the 
+//largest imporvement to the given array arr by making two 
+//markers be next to each other using distTable for distances. 
 function progressiveRoute(arr, distTable) {
   var prevDist = routeDist(arr, distTable);
   var prevArr = arr;
@@ -619,6 +631,8 @@ function progressiveRoute(arr, distTable) {
   };
   return prevArr;
 }
+//Returns the array of objects with markers that is arr but with elm2 directly 
+//after elm1. 
 function createRoute(arr, elm1, elm2) {
   var outArr = [];
   for(var i = 0; i < arr.length; i++) {
@@ -634,13 +648,14 @@ function createRoute(arr, elm1, elm2) {
 }
 const radiusOfEarth = 6372.8; // in kilometers
  
-// Converts the given degrees to radians
+// Converts the given degree to radians
 function degreesToRadian(degrees) {
         return degrees/180 * Math.PI ;
 }
  
  
-// takes latitude and longitude in degrees and radius of the sphere
+//Given a latitude and longitude in degrees and radius of a sphere returns the 
+//haversine distance between the points on a sphere of radius in miles. 
 function haversineDistance(lat1, long1, lat2, long2, radius) {
         var latrd1 = degreesToRadian(lat1);
         var longrd1 = degreesToRadian(long1);
@@ -655,13 +670,15 @@ function haversineDistance(lat1, long1, lat2, long2, radius) {
          + Math.sin(dLon / 2) * Math.sin(dLon /2) 
          * Math.cos(latrd1) * Math.cos(latrd2);
        var c = 2 * Math.asin(Math.sqrt(a));
-        return radius * c;
+        return radius * c * .621371192;
 }
  
 // takes two LatLngs and computes the distance between them
 function getDist(latlng1, latlng2) {
   return haversineDistance(latlng1.lat(), latlng1.lng(), latlng2.lat(), latlng2.lng(), radiusOfEarth);
 }
+//Returns the numerical distance in miles of the given route which is ordered by marker in the 
+//given arr with distances between markers IDs in the distTable. 
 function routeDist(arr, distTable) {
   if(arr.length <= 1 ) {
     return 0;
@@ -675,8 +692,11 @@ function routeDist(arr, distTable) {
   totalDist += distTable[last.id][arr[0].id];
   return totalDist;
 }
-
-function statsForRoute(route) {
+//Prints to console information on the distances of the routes produced by
+//the nearest neighbor and progressive nearest neighbor algoithms. 
+//route is the string name of the route and cycle is the number
+//of cycles to use for the progressive nearest neighbor algorithm.   
+function statsForRoute(route, cycles) {
   var curRoute = [];
   for(var i = 0; i < markers.length; i++) {
     if((markers[i].group == route 
@@ -694,19 +714,22 @@ function statsForRoute(route) {
   var minPRoute = null;
   var minNNRoute = null;
   for(var i = 0; i < curRoute.length; i++) {
-    var distTable = getNearestNeighbor(curRoute[i]).table
-    var tempNN = routeDist(getNearestNeighbor(curRoute[i]).route, distTable);
-    var tempP = routeDist(bestProgressiveRoute(curRoute[i], 100), distTable);
-    if(tempNN < nnMin) {
-      nnMin = tempNN;
-      minNNRoute = getNearestNeighbor(curRoute[i]).route;
+    console.log(i);
+    var distTable = getNearestNeighbor(curRoute[i]).table;
+    var tempNN = getNearestNeighbor(curRoute[i]).route;
+    var tempP = bestProgressiveRoute(curRoute[i], cycles);
+    var tempDNN = routeDist(tempNN, distTable); 
+    var tempDP = routeDist(tempP, distTable);
+    if(tempDNN < nnMin) {
+      nnMin = tempDNN;
+      minNNRoute = tempNN;
     }
-    if(tempP < pMin) {
-      pMin = tempP;
-      minPRoute = bestProgressiveRoute(curRoute[i], 100); 
+    if(tempDP < pMin) {
+      pMin = tempDP;
+      minPRoute = tempP; 
     }
-    nnDist += tempNN;
-    pDist += tempP;
+    nnDist += tempDNN;
+    pDist += tempDP;
   }
   routeFound = true;
   if(nnPolyRoute != null && pPolyRoute != null) {
