@@ -473,11 +473,13 @@ function makeMarker(data) {
         nnPolyRoute.setMap(null);
         pPolyRoute.setMap(null);
       }
-      pPolyRoute = drawRoute(getNearestNeighbor(marker).route, '#FF0000');
-      nnPolyRoute = drawRoute(bestProgressiveRoute(marker, 200), '#0000FF');
-      routeFound = true;
-      findRoute = false;
-      $("#find_route").attr("value","Calculate Route");
+      getDistTable(marker, true, 5, 100, function(distTable) {
+        pPolyRoute = drawRoute(getNearestNeighbor(marker, distTable), '#FF0000');
+        nnPolyRoute = drawRoute(bestProgressiveRoute(marker, distTable, 100), '#0000FF');
+        routeFound = true;
+        findRoute = false;
+        $("#find_route").attr("value","Calculate Route");
+      });
     }
     //if there is no route being added to open info window.
     else if(!add) {
@@ -524,7 +526,7 @@ function checkVisible(marker) {
 }
 //Returns the PolyLine represented by the points in arr in the given color.
 function drawRoute(arr, color) {
-  if(arr.length != 0){
+  if(arr.length != 0){1
     arr.push(arr[0]);
   }
   for(var i = 0; i < arr.length; i++) {
@@ -542,7 +544,7 @@ function drawRoute(arr, color) {
 //Given a Marker returns an object containing an array representing the 
 //distance between markers in the given markers route and the 
 //nearest neighbor route starting from the starting mark.  
-function getNearestNeighbor(startMark) {
+function getNearestNeighbor(startMark, distTable) {
   var curRoute = [];
   var finalRoute = [];
   var startIndex = 0;
@@ -564,17 +566,6 @@ function getNearestNeighbor(startMark) {
       count++;
     }
   }
-  //Creates the lookup table for all distances using the indicies of 
-  //markers in relation to markers IDs. 
-  var distTable = [];
-  for(var start = 0; start < curRoute.length; start++) {
-    distTable[start] = [];
-    for(var end = 0; end < curRoute.length; end++) {
-      distTable[start][end] = 
-      getDist(curRoute[start].marker.getPosition(), 
-              curRoute[end].marker.getPosition()); 
-    }
-  }
   var currentIndex = startIndex;
   curRoute[startIndex].visited = true;
   finalRoute.push(curRoute[startIndex]);
@@ -592,23 +583,17 @@ function getNearestNeighbor(startMark) {
     finalRoute.push(minMark);
     currentIndex = minMark.id;
   }
-  return {
-            route: finalRoute,
-            table: distTable
-          };
+  return finalRoute;
 }
 //Returns an array of objects with markers that is 
 //the Progressive Nearest Neighbor route starting at startMark with 
 //integer cycles number of progressive improvement calls. 
-function bestProgressiveRoute(startMark, cycles) {
-  var temp = getNearestNeighbor(startMark);
-  var arr = temp.route;
-  var distTable = temp.table;
-  for(var i = 0; i < cycles; i++) {
-    arr = progressiveRoute(arr, distTable);
-  }
-
-  return arr;
+function bestProgressiveRoute(startMark, distTable, cycles) {
+  var route = getNearestNeighbor(startMark, distTable);
+    for(var i = 0; i < cycles; i++) {
+      route = progressiveRoute(route, distTable);
+    }
+  return route;
 }
 //Returns an array of objects with markers that finds the 
 //largest imporvement to the given array arr by making two 
@@ -645,9 +630,7 @@ function createRoute(arr, elm1, elm2) {
     } 
   }
   return outArr;
-}
-const radiusOfEarth = 6372.8; // in kilometers
- 
+} 
 // Converts the given degree to radians
 function degreesToRadian(degrees) {
         return degrees/180 * Math.PI ;
@@ -670,10 +653,11 @@ function haversineDistance(lat1, long1, lat2, long2, radius) {
          + Math.sin(dLon / 2) * Math.sin(dLon /2) 
          * Math.cos(latrd1) * Math.cos(latrd2);
        var c = 2 * Math.asin(Math.sqrt(a));
-        return radius * c * .621371192;
+        return radius * c * .621371192; //COnverts to miles 
 }
  
-// takes two LatLngs and computes the distance between them
+ const radiusOfEarth = 6372.8; // in kilometers
+// takes two LatLngs and computes the distance between them in miles. 
 function getDist(latlng1, latlng2) {
   return haversineDistance(latlng1.lat(), latlng1.lng(), latlng2.lat(), latlng2.lng(), radiusOfEarth);
 }
@@ -692,11 +676,138 @@ function routeDist(arr, distTable) {
   totalDist += distTable[last.id][arr[0].id];
   return totalDist;
 }
+//calls the given callback function with the Distance table which is an array of distances in miles
+//between all of the markers in the same route as satrtMark according to their ordering in markers
+//using google walking distance if useGoogle for the closest numtoGet markers less than mileCutoff
+//to each marker. 
+function getDistTable(startMark, useGoogle, numToGet, mileCutoff, callback) {
+  var curRoute = [];
+  var count = 0;
+  for(var i = 0; i < markers.length; i++) {
+    if((markers[i].group == startMark.group 
+      || ((startMark.group == "" && markers[i].group == null)
+      || (startMark.group == null && markers[i].group == "")))
+      && !markers[i].visited 
+      && !markers[i].del) {
+      curRoute.push({
+        marker: markers[i],
+        id: count
+      });
+      count++;
+    }
+  }
+  var distTable = [];
+  for(var start = 0; start < curRoute.length; start++) {
+    distTable[start] = [];
+    for(var end = 0; end < curRoute.length; end++) {
+      distTable[start][end] = 
+      getDist(curRoute[start].marker.getPosition(), 
+              curRoute[end].marker.getPosition()); 
+    }
+  }
+  if(useGoogle) {
+    getGoogleDistTable(curRoute, distTable, numToGet, mileCutoff, function(val) {
+      callback(val);
+    });
+  }
+  else {
+    callback(distTable);
+  }
+} 
+//calls the given callback function with the distTable updated with at most numToGet 
+//minimum distances for each marker in arr 
+//as long as it is below mileCutoff 
+function getGoogleDistTable(arr, distTable, numToGet, mileCutoff, callback) {
+  var promArr = [];
+  for(var i = 0; i < (distTable.length + 1) / 2; i++) {
+    var minArr = [];
+    var maxMin = 0;
+    for(var j = 0; j < (distTable.length + 1) / 2; j++) {
+      if(i != j && (minArr.length < numToGet || distTable[i][j] < maxMin) 
+        && distTable[i][j] < mileCutoff) {
+        noChange = false;
+        minArr.push({begin: i, end: j});
+        if(minArr.length < numToGet && distTable[i][j] > maxMin) {
+          maxMin = distTable[i][j];
+        }
+        else {
+          var max = minArr[0];
+          var tempArr = [];
+          for(var k = 1; k < minArr.length; k++) {
+            if(distTable[minArr[j].begin][minArr[j].end] > max) {
+              tempArr.push(max);
+              max = minArr[j];
+            }
+          }
+        } 
+      }
+    }
+    for(var j = 0; j < minArr.length; j++) {
+      var cur = minArr[j];
+      promArr.push(getGoogleDist(arr[cur.begin].marker, arr[cur.end].marker).then(
+        function(tempArr) {
+          return new Promise( function(resolve, reject) {
+            distTable[cur.begin][cur.end] = tempArr[0][1];
+            distTable[cur.end][cur.begin] = tempArr[1][0];
+            resolve();
+          });
+        },
+        function(tempArr) {
+          return new Promise( function(resolve, reject) {
+            reject();
+          });
+        }
+      ));
+    }    
+  }
+  Promise.all(promArr).then(
+    function() {
+      callback(distTable);
+    },
+    function() {
+      alert("Cannot find distances between markers");
+    });  
+}
+//Returns a Promise with the 2D array of distances to an from the given markers according to google walking directions. 
+function getGoogleDist(marker1, marker2) {
+  return new Promise(function(resolve, reject) {
+    var service = new google.maps.DistanceMatrixService();
+    service.getDistanceMatrix(
+    {
+      origins: [marker1.getPosition(), marker2.getPosition()],
+      destinations: [marker1.getPosition(), marker2.getPosition()],
+      travelMode: google.maps.TravelMode.WALKING,
+      unitSystem: google.maps.UnitSystem.IMPERIAL
+    }, 
+    function(response, status){
+      if (status == google.maps.DistanceMatrixStatus.OK) {
+        var origins = response.originAddresses;
+        var destinations = response.destinationAddresses;
+        var outArr = [];
+        for (var i = 0; i < origins.length; i++) {
+          var results = response.rows[i].elements;
+          outArr[i] = [];
+          for (var j = 0; j < results.length; j++) {
+            outArr[i][j] = results[j].distance.value * 0.000621371;
+          }
+        }
+        resolve(outArr);
+      }
+      else {
+        reject("error");
+      }
+    });
+  });
+}
 //Prints to console information on the distances of the routes produced by
 //the nearest neighbor and progressive nearest neighbor algoithms. 
 //route is the string name of the route and cycle is the number
-//of cycles to use for the progressive nearest neighbor algorithm.   
-function statsForRoute(route, cycles) {
+//of cycles to use for the progressive nearest neighbor algorithm
+//useGoogle is a boolean that is to decide if you use google walking
+//distance as a way to measure distances,
+//numToGet is how many points closest to a marker, but less tha mileCutoff
+// should be updated to the Google walking distance    
+function statsForRoute(route, cycles, useGoogle, numToGet, mileCutoff) {
   var curRoute = [];
   for(var i = 0; i < markers.length; i++) {
     if((markers[i].group == route 
@@ -709,41 +820,43 @@ function statsForRoute(route, cycles) {
   }
   var nnDist = 0;
   var pDist = 0;
-  var nnMin = 300000;
-  var pMin = 300000;
+  var nnMin = -1; 
+  var pMin = -1;
   var minPRoute = null;
   var minNNRoute = null;
-  for(var i = 0; i < curRoute.length; i++) {
-    console.log(i);
-    var distTable = getNearestNeighbor(curRoute[i]).table;
-    var tempNN = getNearestNeighbor(curRoute[i]).route;
-    var tempP = bestProgressiveRoute(curRoute[i], cycles);
-    var tempDNN = routeDist(tempNN, distTable); 
-    var tempDP = routeDist(tempP, distTable);
-    if(tempDNN < nnMin) {
-      nnMin = tempDNN;
-      minNNRoute = tempNN;
+  getDistTable(curRoute[0], useGoogle, numToGet, mileCutoff, function(distTable) {
+    for(var i = 0; i < curRoute.length; i++) {
+      var tempNN = getNearestNeighbor(curRoute[i], distTable);
+      var tempP = bestProgressiveRoute(curRoute[i], distTable, cycles);
+      var tempDNN = routeDist(tempNN, distTable); 
+      var tempDP = routeDist(tempP, distTable);
+      if(tempDNN < nnMin || nnMin == -1) {
+        nnMin = tempDNN;
+        minNNRoute = tempNN;
+      }
+      if(tempDP < pMin || pMin == -1) {
+        pMin = tempDP;
+        minPRoute = tempP; 
+      }
+      nnDist += tempDNN;
+      pDist += tempDP;
     }
-    if(tempDP < pMin) {
-      pMin = tempDP;
-      minPRoute = tempP; 
+    if(curRoute.length > 1) {
+      routeFound = true;
+      if(nnPolyRoute != null && pPolyRoute != null) {
+        nnPolyRoute.setMap(null);
+        pPolyRoute.setMap(null);
+      }
+      nnPolyRoute = drawRoute(minNNRoute, "#FF0000");
+      pPolyRoute = drawRoute(minPRoute, "#0000FF");
+      var avNNDist = nnDist / curRoute.length;
+      var avPDist = pDist / curRoute.length;
+      console.log("Nearest Neighbor:");
+      console.log("    Average: " + avNNDist);
+      console.log("    Min: " + nnMin);
+      console.log("Progressive:");
+      console.log("    Average: " + avPDist);
+      console.log("    Min: " + pMin);
     }
-    nnDist += tempDNN;
-    pDist += tempDP;
-  }
-  routeFound = true;
-  if(nnPolyRoute != null && pPolyRoute != null) {
-    nnPolyRoute.setMap(null);
-    pPolyRoute.setMap(null);
-  }
-  nnPolyRoute = drawRoute(minNNRoute);
-  pPolyRoute = drawRoute(minPRoute);
-  var avNNDist = nnDist / curRoute.length;
-  var avPDist = pDist / curRoute.length;
-  console.log("Nearest Neighbor:");
-  console.log("    Average: " + avNNDist);
-  console.log("    Min: " + nnMin);
-  console.log("Progressive:");
-  console.log("    Average: " + avPDist);
-  console.log("    Min: " + pMin);
+  });
 }
