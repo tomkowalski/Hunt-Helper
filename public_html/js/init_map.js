@@ -475,7 +475,7 @@ function makeMarker(data) {
       }
       getDistTable(marker, true, 5, 100, function(distTable) {
         pPolyRoute = drawRoute(getNearestNeighbor(marker, distTable), '#FF0000');
-        nnPolyRoute = drawRoute(bestProgressiveRoute(marker, distTable, 100), '#0000FF');
+        nnPolyRoute = drawRoute(bestProgressiveRoute(marker, distTable, 100), '#0000FF', true);
         routeFound = true;
         findRoute = false;
         $("#find_route").attr("value","Calculate Route");
@@ -543,7 +543,7 @@ function drawRoute(arr, color) {
 }
 //Given a Marker returns an object containing an array representing the 
 //distance between markers in the given markers route and the 
-//nearest neighbor route starting from the starting mark.  
+//nearest neighbor route starting from the starting mark. 
 function getNearestNeighbor(startMark, distTable) {
   var curRoute = [];
   var finalRoute = [];
@@ -588,11 +588,18 @@ function getNearestNeighbor(startMark, distTable) {
 //Returns an array of objects with markers that is 
 //the Progressive Nearest Neighbor route starting at startMark with 
 //integer cycles number of progressive improvement calls. 
-function bestProgressiveRoute(startMark, distTable, cycles) {
+//Prints distance in miles to console.log if print is true. 
+function bestProgressiveRoute(startMark, distTable, cycles, print) {
   var route = getNearestNeighbor(startMark, distTable);
-    for(var i = 0; i < cycles; i++) {
+  if(print){
+    console.log("Nearest Neighbor Distance: " + routeDist(route, distTable) + " miles");   
+  } 
+  for(var i = 0; i < cycles; i++) {
       route = progressiveRoute(route, distTable);
     }
+  if(print) {
+    console.log("Progressive Nearest Neighbor Distance: " + routeDist(route, distTable) + " miles");
+  }
   return route;
 }
 //Returns an array of objects with markers that finds the 
@@ -734,9 +741,9 @@ function getGoogleDistTable(arr, distTable, numToGet, mileCutoff, callback) {
           var max = minArr[0];
           var tempArr = [];
           for(var k = 1; k < minArr.length; k++) {
-            if(distTable[minArr[j].begin][minArr[j].end] > max) {
+            if(distTable[minArr[k].begin][minArr[k].end] > max) {
               tempArr.push(max);
-              max = minArr[j];
+              max = minArr[k];
             }
           }
         } 
@@ -788,7 +795,9 @@ function getGoogleDist(marker1, marker2) {
           var results = response.rows[i].elements;
           outArr[i] = [];
           for (var j = 0; j < results.length; j++) {
-            outArr[i][j] = results[j].distance.value * 0.000621371;
+            if(results[j].status == "OK"){
+              outArr[i][j] = results[j].distance.value * 0.000621371;
+            }
           }
         }
         resolve(outArr);
@@ -827,7 +836,7 @@ function statsForRoute(route, cycles, useGoogle, numToGet, mileCutoff) {
   getDistTable(curRoute[0], useGoogle, numToGet, mileCutoff, function(distTable) {
     for(var i = 0; i < curRoute.length; i++) {
       var tempNN = getNearestNeighbor(curRoute[i], distTable);
-      var tempP = bestProgressiveRoute(curRoute[i], distTable, cycles);
+      var tempP = bestProgressiveRoute(curRoute[i], distTable, cycles, false);
       var tempDNN = routeDist(tempNN, distTable); 
       var tempDP = routeDist(tempP, distTable);
       if(tempDNN < nnMin || nnMin == -1) {

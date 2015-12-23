@@ -46,57 +46,60 @@ foreach($_POST["array"] as $marker) {
 	$visited = escape($marker['visited']);
 	$del = escape($marker['del']);
 	$groupID = getOne("SELECT * FROM user WHERE ID='$uid'", "group_key");
-	if($groupID == "No Results") {
-		//$groupID = -1;
-	}
-	$tempOut = array();
-	$tempOut["group"] = $groupID;
-	//Add new marker.
-	if($id <= 0) {
-		if($del == "true") {
-			$tempOut["status"] = "saved and deleted";
-			$tempOut["del"] = "yes";
-		}
-		else {
-			$tempOut = prepCreate($groupID, $marker);
-		}
+	if($groupID == "No Results" || $groupID == 0 || $groupID == 1) {
+		$out["status"] = "Error";
+		$out["error"] = "Please Join a valid group";
 	}
 	else {
-		$conn = login();
-		if($del == "true") { //Delete marker from database
-			$result = $conn->query("DELETE FROM place WHERE ID='$id'");
-			if(!$result) {
-				$tempOut["status"] = "error";
-			}
-			else {
-				$tempOut["status"] = "saved";
-				$tempOut["ID"] = $id;
+		$tempOut = array();
+		$tempOut["group"] = $groupID;
+		//Add new marker.
+		if($id <= 0) {
+			if($del == "true") {
+				$tempOut["status"] = "saved and deleted";
 				$tempOut["del"] = "yes";
 			}
-		}
-		else { //Update marker in database
-			$result = $conn->query("UPDATE place SET 
-				name='$title',
-				address='$add',
-				lat='$lat',
-				lng='$lng',
-				group_key='$groupID', 
-				sub_group='$subgroup',
-				position='$num',
-				visited='$visited'
-				WHERE ID='$id'");
-			if(!$result) {
-				$tempOut["status"] = "error";
-			}
 			else {
-				$tempOut["status"] = "saved as update";
-				$tempOut["ID"] = $id;
+				$tempOut = prepCreate($groupID, $marker);
 			}
 		}
-		$conn->close();
+		else {
+			$conn = login();
+			if($del == "true") { //Delete marker from database
+				$result = $conn->query("DELETE FROM place WHERE ID='$id'");
+				if(!$result) {
+					$tempOut["status"] = "error";
+				}
+				else {
+					$tempOut["status"] = "saved";
+					$tempOut["ID"] = $id;
+					$tempOut["del"] = "yes";
+				}
+			}
+			else { //Update marker in database
+				$result = $conn->query("UPDATE place SET 
+					name='$title',
+					address='$add',
+					lat='$lat',
+					lng='$lng',
+					group_key='$groupID', 
+					sub_group='$subgroup',
+					position='$num',
+					visited='$visited'
+					WHERE ID='$id'");
+				if(!$result) {
+					$tempOut["status"] = "error";
+				}
+				else {
+					$tempOut["status"] = "saved as update";
+					$tempOut["ID"] = $id;
+				}
+			}
+			$conn->close();
+		}
+		$out[$i] = $tempOut;
+		$i += 1;
 	}
-	$out[$i] = $tempOut;
-	$i += 1;
 }
 header("Content-Type: application/json", true);
 echo json_encode($out);
