@@ -1,0 +1,33 @@
+(*Mathematica Queries for Optimal TSP Paths and distances*)
+
+(*US Capitals*)
+
+(*grab cities and their GeoPositions*)
+cities = SemanticInterpretation["contigious US state capitals"];
+locs = EntityValue[cities, "Position"];
+
+(*find the shortest tour*)
+{distance, tour} = FindShortestTour[locs];
+(*find the distance of the tour*)
+distance
+(*plot it*)
+GeoGraphics[GeoPath[cities[[tour]]], 
+ GeoRange -> "Country", ImageSize -> Full, 
+ GeoBackground -> GeoStyling["StreetMapNoLabels"]]
+
+(*World Capitals*)
+
+(*grab UN countries, cpaitals and thier positions *)
+
+countries = CountryData["UnitedNations"];
+capitals = EntityValue[countries, "CapitalCity"];
+positions = EntityValue[capitals, "Position"];
+(*find the shortest tour*)
+{distance, perm} = 
+  FindShortestTour[positions];
+(*find the distance of the tour*)
+distance
+(*plot it*)
+GeoGraphics[{GeoPath[positions[[perm]]], Red, 
+  Point /@ positions}, GeoRange -> "World", GeoCenter -> 40, 
+ ImageSize -> Full, GeoBackground -> GeoStyling["StreetMapNoLabels"]]

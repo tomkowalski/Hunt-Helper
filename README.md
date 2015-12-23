@@ -38,3 +38,5 @@ To test nearest-neighbor and progressive-nearest-neighbor algorithms:
     * Note: Optimal TSP routes for sample groups are: 
         * US Capitals: 87885.2 Miles
         * World Capitals: 10617.4 Miles
+        * Distances found using Mathematica using quieries found in Algorithm Analyis directory. 
+            * Also in the directory are images of the optimal routes from Mathematica and the best routes found using the nearst-neighbor and progressive nearest-neighbor algorithms.  
